@@ -1,4 +1,4 @@
-package personal.sns.domain.exception;
+package personal.sns.exception.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

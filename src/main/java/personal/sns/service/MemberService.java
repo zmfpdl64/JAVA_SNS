@@ -1,12 +1,12 @@
-package personal.sns.domain;
+package personal.sns.service;
 
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import personal.sns.domain.Member;
 import personal.sns.domain.entity.MemberEntity;
-import personal.sns.domain.exception.Errorcode;
-import personal.sns.domain.exception.SnsException;
+import personal.sns.exception.exception.Errorcode;
+import personal.sns.exception.exception.SnsException;
 import personal.sns.repository.MemberRepository;
 
 @Transactional
