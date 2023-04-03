@@ -65,5 +65,55 @@ class MemberServiceTest {
 
     }
 
+    @DisplayName("로그인 정상")
+    @Test
+    void 로그인_정상(){
+        //Given
+        String username = "username";
+        String password = "password";
+        MemberEntity member = EntityFixture.of(username, password);
+
+        //When
+        when(memberRepository.findByName(username)).thenReturn(Optional.of(member));
+
+        //Then
+        assertDoesNotThrow(() -> memberService.login(Login(username, password)));
+    }
+
+    @DisplayName("로그인 존재하지 않는 아이디 실패")
+    @Test
+    void 로그인_존재하지_않는_아이디_실패(){
+        //Given
+        String username = "username";
+        String password = "password";
+        MemberEntity member = EntityFixture.of(username, password);
+
+        //When
+        when(memberRepository.findByName(username)).thenReturn(Optional.empty());
+
+        //Then
+        SnsException exception = assertThrows(SnsException.class, () -> {
+            memberService.login(Login(username, password));
+        });
+
+        assertEquals(exception.getErrorcode(), SnsException.NOTFOUNDNAME);
+    }
+    @DisplayName("로그인 일치하지 않는 비밀번호 실패")
+    @Test
+    void 로그인_일치하지_않는_비밀번호_실패(){
+        //Given
+        String username = "username";
+        String password = "password";
+        MemberEntity member = EntityFixture.of(username, password);
+
+        //When
+        when(memberRepository.findByName(username)).thenReturn(Optional.empty());
+
+        //Then
+        SnsException exception = assertThrows(SnsException.class, () -> {
+            memberService.login(Login(username, password));
+        });
+        assertEquals(exception.getErrorcode(), SnsException.NOTMATCHPASSWORD);
+    }
 
 }
