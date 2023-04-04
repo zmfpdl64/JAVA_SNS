@@ -18,7 +18,7 @@ public class SnsException extends RuntimeException{
 
 
     public String getMessage() {
-        if (message.isEmpty()){
+        if (message == null){
             return errorcode.getMessage();
         }
         return String.format("%s %s", errorcode.getMessage(), message);
