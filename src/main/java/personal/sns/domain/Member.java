@@ -9,6 +9,7 @@ import java.sql.Timestamp;
 @Getter
 @AllArgsConstructor
 public class Member {
+    private Integer memberId;
     private String name;
     private String password;
     private Timestamp createdAt;
@@ -16,6 +17,7 @@ public class Member {
 
     public static Member fromEntity(MemberEntity member) {
         return new Member(
+                member.getId(),
                 member.getName(),
                 member.getPassword(),
                 member.getCreated_at(),
