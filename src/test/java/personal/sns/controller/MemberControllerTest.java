@@ -73,7 +73,7 @@ class MemberControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsBytes(new MemberJoinRequest(username, password))))
                 .andDo(print())
-                .andExpect(status().isConflict());
+                .andExpect(status().is(Errorcode.DUPLICATE_USERNAME.getStatus().value()));
         //Then
     }
 
