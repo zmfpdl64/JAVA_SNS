@@ -15,8 +15,10 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import personal.sns.controller.request.MemberJoinRequest;
 import personal.sns.domain.Member;
+import personal.sns.domain.entity.MemberEntity;
 import personal.sns.exception.exception.Errorcode;
 import personal.sns.exception.exception.SnsException;
+import personal.sns.fixture.EntityFixture;
 import personal.sns.service.MemberService;
 
 import static org.mockito.Mockito.mock;
@@ -76,6 +78,65 @@ class MemberControllerTest {
                 .andExpect(status().is(Errorcode.DUPLICATE_USERNAME.getStatus().value()));
         //Then
     }
+
+    @DisplayName("로그인 정상")
+    @Test
+    void 로그인_정상() {
+        //Given
+        String username = "username";
+        String password = "password";
+        MemberEntity member = EntityFixture.of(username, password);
+
+        //When
+        when(memberService.login(Login(username, password))).thenReturn("Success");
+        mvc.perform(post("/api/user/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsBytes(RequestLogin(username, password)))
+        ).andDo(print())
+                .andExpect(status().isOk());
+        //Then
+
+    }
+
+    @DisplayName("로그인 아이디 존재하지 않음 실패")
+    @Test
+    void 로그인_아이디_존재하지_않음_실패() {
+        //Given
+        String username = "username";
+        String password = "password";
+        MemberEntity member = EntityFixture.of(username, password);
+
+        //When
+        when(memberService.login(Login(username, password))).thenThrow(new SnsException(Errorcode.NOT_EXISTS_USERNAME));
+        mvc.perform(post("/api/user/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsBytes(RequestLogin(username, password)))
+                ).andDo(print())
+                .andExpect(status().is(Errorcode.NOT_EXISTS_USERNAME.getStatus().value()));
+        //Then
+
+    }
+
+    @DisplayName("로그인 아이디 일치 패스워드 불일치 실패")
+    @Test
+    void 로그인_아이디_일치_패스워드_불일치_실패() {
+        //Given
+        String username = "username";
+        String password = "password";
+        MemberEntity member = EntityFixture.of(username, password);
+
+        //When
+        when(memberService.login(Login(username, password))).thenThrow(new SnsException(Errorcode.NOT_MATCH_PASSWORD));
+        mvc.perform(post("/api/user/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsBytes(RequestLogin(username, password)))
+                ).andDo(print())
+                .andExpect(status().is(Errorcode.NOT_MATCH_PASSWORD.getStauts().value()));
+
+        //Then
+
+    }
+
 
 
 }
