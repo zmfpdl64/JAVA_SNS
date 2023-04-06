@@ -1,6 +1,7 @@
 package personal.sns.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -10,6 +11,7 @@ import personal.sns.controller.response.MemberJoinResponse;
 import personal.sns.controller.response.Response;
 import personal.sns.service.MemberService;
 
+@Slf4j
 @RequiredArgsConstructor
 @RequestMapping("/api/user")
 @RestController
@@ -20,6 +22,10 @@ public class MemberController {
     @PostMapping("/join")
     public Response<MemberJoinResponse> join(@RequestBody MemberJoinRequest request) {
         return Response.success(MemberJoinResponse.fromMember(memberService.join(request.getUsername(), request.getPassword())));
+    }
+    @PostMapping("/login")
+    public Response<MemberJoinResponse> login(@RequestBody MemberJoinRequest request){
+        return Response.success(MemberJoinResponse.fromMember(memberService.login(request.getUsername(), request.getPassword())));
     }
 
 }
