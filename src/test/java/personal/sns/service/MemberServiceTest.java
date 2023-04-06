@@ -1,30 +1,18 @@
 package personal.sns.service;
 
-import jakarta.persistence.PrePersist;
-import org.hibernate.cfg.Environment;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.TestPropertySources;
+import personal.sns.controller.response.MemberLoginResposne;
 import personal.sns.domain.entity.MemberEntity;
-import personal.sns.exception.exception.Errorcode;
-import personal.sns.exception.exception.SnsException;
+import personal.sns.exception.Errorcode;
+import personal.sns.exception.SnsException;
 import personal.sns.fixture.EntityFixture;
 import personal.sns.repository.MemberRepository;
-import personal.sns.service.MemberService;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -90,7 +78,7 @@ class MemberServiceTest {
         when(memberRepository.findByName(username)).thenReturn(Optional.of(member));
 
         //Then
-        assertDoesNotThrow(() -> memberService.login(Login(username, password)));
+        assertDoesNotThrow(() -> memberService.login(username, password));
     }
 
     @DisplayName("로그인 존재하지 않는 아이디 실패")
@@ -106,10 +94,10 @@ class MemberServiceTest {
 
         //Then
         SnsException exception = assertThrows(SnsException.class, () -> {
-            memberService.login(Login(username, password));
+            memberService.login(username, password);
         });
 
-        assertEquals(exception.getErrorcode(), SnsException.NOTFOUNDNAME);
+        assertEquals(exception.getErrorcode(), Errorcode.NOT_MATCH_AUTH);
     }
     @DisplayName("로그인 일치하지 않는 비밀번호 실패")
     @Test
@@ -124,9 +112,9 @@ class MemberServiceTest {
 
         //Then
         SnsException exception = assertThrows(SnsException.class, () -> {
-            memberService.login(Login(username, password));
+            memberService.login(username, password);
         });
-        assertEquals(exception.getErrorcode(), SnsException.NOTMATCHPASSWORD);
+        assertEquals(exception.getErrorcode(), Errorcode.NOT_MATCH_AUTH);
     }
 
 }

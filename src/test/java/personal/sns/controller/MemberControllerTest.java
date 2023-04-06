@@ -1,23 +1,24 @@
 package personal.sns.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.PrePersist;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithAnonymousUser;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import personal.sns.controller.request.MemberJoinRequest;
+import personal.sns.controller.request.MemberLoginRequest;
 import personal.sns.domain.Member;
 import personal.sns.domain.entity.MemberEntity;
-import personal.sns.exception.exception.Errorcode;
-import personal.sns.exception.exception.SnsException;
+import personal.sns.exception.Errorcode;
+import personal.sns.exception.SnsException;
 import personal.sns.fixture.EntityFixture;
 import personal.sns.service.MemberService;
 
@@ -29,6 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @DisplayName("유저 컨트롤러 테스트")
 @SpringBootTest
+@ActiveProfiles("test")
 @AutoConfigureMockMvc
 class MemberControllerTest {
 
@@ -81,17 +83,17 @@ class MemberControllerTest {
 
     @DisplayName("로그인 정상")
     @Test
-    void 로그인_정상() {
+    void 로그인_정상() throws Exception {
         //Given
         String username = "username";
         String password = "password";
         MemberEntity member = EntityFixture.of(username, password);
 
         //When
-        when(memberService.login(Login(username, password))).thenReturn("Success");
+        when(memberService.login(username, password)).thenReturn(Member.fromEntity(member));
         mvc.perform(post("/api/user/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsBytes(RequestLogin(username, password)))
+                .content(mapper.writeValueAsBytes(new MemberLoginRequest(username, password)))
         ).andDo(print())
                 .andExpect(status().isOk());
         //Then
@@ -100,38 +102,38 @@ class MemberControllerTest {
 
     @DisplayName("로그인 아이디 존재하지 않음 실패")
     @Test
-    void 로그인_아이디_존재하지_않음_실패() {
+    void 로그인_아이디_존재하지_않음_실패() throws Exception {
         //Given
         String username = "username";
         String password = "password";
         MemberEntity member = EntityFixture.of(username, password);
 
         //When
-        when(memberService.login(Login(username, password))).thenThrow(new SnsException(Errorcode.NOT_EXISTS_USERNAME));
+        when(memberService.login(username, password)).thenThrow(new SnsException(Errorcode.NOT_MATCH_AUTH));
         mvc.perform(post("/api/user/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsBytes(RequestLogin(username, password)))
+                        .content(mapper.writeValueAsBytes(new MemberLoginRequest(username, password)))
                 ).andDo(print())
-                .andExpect(status().is(Errorcode.NOT_EXISTS_USERNAME.getStatus().value()));
+                .andExpect(status().is(Errorcode.NOT_MATCH_AUTH.getStatus().value()));
         //Then
 
     }
 
     @DisplayName("로그인 아이디 일치 패스워드 불일치 실패")
     @Test
-    void 로그인_아이디_일치_패스워드_불일치_실패() {
+    void 로그인_아이디_일치_패스워드_불일치_실패() throws Exception {
         //Given
         String username = "username";
         String password = "password";
         MemberEntity member = EntityFixture.of(username, password);
 
         //When
-        when(memberService.login(Login(username, password))).thenThrow(new SnsException(Errorcode.NOT_MATCH_PASSWORD));
+        when(memberService.login(username, password)).thenThrow(new SnsException(Errorcode.NOT_MATCH_AUTH));
         mvc.perform(post("/api/user/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsBytes(RequestLogin(username, password)))
+                        .content(mapper.writeValueAsBytes(new MemberLoginRequest(username, password)))
                 ).andDo(print())
-                .andExpect(status().is(Errorcode.NOT_MATCH_PASSWORD.getStauts().value()));
+                .andExpect(status().is(Errorcode.NOT_MATCH_AUTH.getStatus().value()));
 
         //Then
 
