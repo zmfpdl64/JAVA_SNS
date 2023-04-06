@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
-import personal.sns.controller.response.MemberLoginResposne;
 import personal.sns.domain.entity.MemberEntity;
 import personal.sns.exception.Errorcode;
 import personal.sns.exception.SnsException;
@@ -97,7 +96,7 @@ class MemberServiceTest {
             memberService.login(username, password);
         });
 
-        assertEquals(exception.getErrorcode(), Errorcode.NOT_MATCH_AUTH);
+        assertEquals(exception.getErrorcode(), Errorcode.NOT_EXISTS_USERNAME);
     }
     @DisplayName("로그인 일치하지 않는 비밀번호 실패")
     @Test
@@ -105,16 +104,17 @@ class MemberServiceTest {
         //Given
         String username = "username";
         String password = "password";
+        String wrong_password = "wrong";
         MemberEntity member = EntityFixture.of(username, password);
 
         //When
-        when(memberRepository.findByName(username)).thenReturn(Optional.empty());
+        when(memberRepository.findByName(username)).thenReturn(Optional.of(member));
 
         //Then
-        SnsException exception = assertThrows(SnsException.class, () -> {
-            memberService.login(username, password);
-        });
-        assertEquals(exception.getErrorcode(), Errorcode.NOT_MATCH_AUTH);
+        SnsException exception = assertThrows(SnsException.class, () ->
+            memberService.login(username, wrong_password)
+        );
+        assertEquals(exception.getErrorcode(), Errorcode.NOT_MATCH_PASSWORD);
     }
 
 }
