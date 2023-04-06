@@ -5,12 +5,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ActiveProfiles;
 import personal.sns.domain.entity.MemberEntity;
-import personal.sns.exception.exception.Errorcode;
-import personal.sns.exception.exception.SnsException;
+import personal.sns.exception.Errorcode;
+import personal.sns.exception.SnsException;
 import personal.sns.fixture.EntityFixture;
 import personal.sns.repository.MemberRepository;
-import personal.sns.service.MemberService;
 
 import java.util.Optional;
 
@@ -20,6 +20,7 @@ import static org.mockito.Mockito.when;
 
 
 @DisplayName("유저 서비스")
+@ActiveProfiles("test")
 @SpringBootTest
 class MemberServiceTest {
 
@@ -62,8 +63,58 @@ class MemberServiceTest {
         });
 
         assertEquals(snsException.getErrorcode(), Errorcode.DUPLICATE_USERNAME);
-
     }
 
+    @DisplayName("로그인 정상")
+    @Test
+    void 로그인_정상(){
+        //Given
+        String username = "username";
+        String password = "password";
+        MemberEntity member = EntityFixture.of(username, password);
+
+        //When
+        when(memberRepository.findByName(username)).thenReturn(Optional.of(member));
+
+        //Then
+        assertDoesNotThrow(() -> memberService.login(username, password));
+    }
+
+    @DisplayName("로그인 존재하지 않는 아이디 실패")
+    @Test
+    void 로그인_존재하지_않는_아이디_실패(){
+        //Given
+        String username = "username";
+        String password = "password";
+        MemberEntity member = EntityFixture.of(username, password);
+
+        //When
+        when(memberRepository.findByName(username)).thenReturn(Optional.empty());
+
+        //Then
+        SnsException exception = assertThrows(SnsException.class, () -> {
+            memberService.login(username, password);
+        });
+
+        assertEquals(exception.getErrorcode(), Errorcode.NOT_EXISTS_USERNAME);
+    }
+    @DisplayName("로그인 일치하지 않는 비밀번호 실패")
+    @Test
+    void 로그인_일치하지_않는_비밀번호_실패(){
+        //Given
+        String username = "username";
+        String password = "password";
+        String wrong_password = "wrong";
+        MemberEntity member = EntityFixture.of(username, password);
+
+        //When
+        when(memberRepository.findByName(username)).thenReturn(Optional.of(member));
+
+        //Then
+        SnsException exception = assertThrows(SnsException.class, () ->
+            memberService.login(username, wrong_password)
+        );
+        assertEquals(exception.getErrorcode(), Errorcode.NOT_MATCH_PASSWORD);
+    }
 
 }

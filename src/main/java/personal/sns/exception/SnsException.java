@@ -1,4 +1,4 @@
-package personal.sns.exception.exception;
+package personal.sns.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
