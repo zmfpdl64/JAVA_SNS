@@ -25,6 +25,11 @@ public class MemberService {
     @Value("${jwt.token.expired-time-ms}")
     private Long expiredTimeMs;
 
+    public Member loadMemberByMemberName(String userName) {
+        return memberRepository.findByName(userName).map(Member::fromEntity).orElseThrow(() ->
+                new SnsException(Errorcode.NOT_EXISTS_USERNAME, String.format("%s not founded", userName)));
+    }
+
     public Member join(String username, String password) {
         memberRepository.findByName(username).ifPresent(findmember -> {
             throw new SnsException(Errorcode.DUPLICATE_USERNAME, String.format("유저 아이디: %s", username));
