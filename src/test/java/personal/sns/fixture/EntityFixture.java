@@ -18,4 +18,15 @@ public class EntityFixture {
 
         return member;
     }
+    public static MemberEntity of() {
+        String username = "username";
+        String password = "password";
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+        MemberEntity member = MemberEntity.of(username, encoder.encode(password));
+        member.setId(1);
+        member.setCreated_at(Timestamp.from(Instant.now()));
+        member.setModified_at(Timestamp.from(Instant.now()));
+
+        return member;
+    }
 }

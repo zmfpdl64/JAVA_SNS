@@ -47,6 +47,8 @@ public class MemberService {
     }
 
 
-
-
+    public Member loadMemberByMemberName(String userName) {
+        return memberRepository.findByName(userName).map(Member::fromEntity)
+                .orElseThrow(() -> new SnsException(Errorcode.NOT_EXISTS_USERNAME, String.format("%s는 존재하지 않습니다.", userName)));
+    }
 }

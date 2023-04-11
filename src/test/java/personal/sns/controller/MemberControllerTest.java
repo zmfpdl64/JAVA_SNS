@@ -54,7 +54,7 @@ class MemberControllerTest {
         //When
         when(memberService.join(username, password)).thenReturn(mock(Member.class));
 
-        mvc.perform(post("/api/user/join")
+        mvc.perform(post("/api/v1/user/join")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsBytes(new MemberJoinRequest(username, password))))
                 .andDo(print())
@@ -72,7 +72,7 @@ class MemberControllerTest {
         //When
         when(memberService.join(username, password)).thenThrow(new SnsException(Errorcode.DUPLICATE_USERNAME));
 
-        mvc.perform(post("/api/user/join")
+        mvc.perform(post("/api/v1/user/join")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsBytes(new MemberJoinRequest(username, password))))
                 .andDo(print())
@@ -91,7 +91,7 @@ class MemberControllerTest {
         //When
         when(memberService.login(username, password)).thenReturn("token");
 
-        mvc.perform(post("/api/user/login")
+        mvc.perform(post("/api/v1/user/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsBytes(new MemberLoginRequest(username, password)))
         ).andDo(print())
@@ -110,7 +110,7 @@ class MemberControllerTest {
 
         //When
         when(memberService.login(username, password)).thenThrow(new SnsException(Errorcode.NOT_EXISTS_USERNAME));
-        mvc.perform(post("/api/user/login")
+        mvc.perform(post("/api/v1/user/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsBytes(new MemberLoginRequest(username, password)))
                 ).andDo(print())
@@ -129,7 +129,7 @@ class MemberControllerTest {
 
         //When
         when(memberService.login(username, password)).thenThrow(new SnsException(Errorcode.NOT_MATCH_PASSWORD));
-        mvc.perform(post("/api/user/login")
+        mvc.perform(post("/api/v1/user/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsBytes(new MemberLoginRequest(username, password)))
                 ).andDo(print())
