@@ -14,7 +14,7 @@ import personal.sns.service.MemberService;
 
 @Slf4j
 @RequiredArgsConstructor
-@RequestMapping("/api/user")
+@RequestMapping("/api/v1/user")
 @RestController
 public class MemberController {
 

@@ -1,14 +1,13 @@
 package personal.sns.domain.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.Where;
-import personal.sns.domain.UserRole;
+import personal.sns.domain.MemberRole;
 
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -18,7 +17,7 @@ import java.time.Instant;
 @NoArgsConstructor
 @Table(name="member")
 @Entity
-@SQLDelete(sql = "UPDATE user SET deleted_at = NOW() where id = ?")
+@SQLDelete(sql = "UPDATE member SET deleted_at = NOW() where id = ?")
 @Where(clause = "deleted_at is NULL")
 public class MemberEntity {
 
@@ -35,7 +34,7 @@ public class MemberEntity {
 
     @Column(name="role")
     @Enumerated(EnumType.STRING)
-    private UserRole role;
+    private MemberRole role = MemberRole.MEMBER;
 
     @Column(name="created_at")
     private Timestamp created_at;

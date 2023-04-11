@@ -1,6 +1,6 @@
 package personal.sns.domain;
 
-public enum UserRole {
+public enum MemberRole {
     ADMIN,
     MEMBER,
     GUETS
