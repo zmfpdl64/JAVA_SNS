@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import personal.sns.controller.request.PostCreateRequest;
+import personal.sns.controller.request.PostDeleteRequest;
 import personal.sns.controller.request.PostModifyRequest;
 import personal.sns.controller.response.PostModifyResponse;
 import personal.sns.controller.response.Response;
@@ -36,6 +37,13 @@ public class PostController {
         log.info("요청: 게시글 ID {}", postId);
         Post post = postService.modify(request.getTitle(), request.getBody(), authentication.getName(), postId);
         return Response.success(PostModifyResponse.fromPost(post));
+    }
+
+    @DeleteMapping("/{postId}")
+    public Response<Void> deletePost(@RequestBody PostDeleteRequest request, @PathVariable Integer postId, Authentication authentication){
+        postService.delete(postId, authentication.getName());
+
+        return Response.success();
     }
 
 
