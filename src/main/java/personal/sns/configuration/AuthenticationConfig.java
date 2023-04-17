@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import personal.sns.configuration.filter.JwtTokenFilter;
@@ -29,7 +30,8 @@ public class AuthenticationConfig{
                 .authorizeHttpRequests(authorize ->
                     authorize
                             .requestMatchers("/api/v1/user/**").permitAll()
-                            .anyRequest().authenticated()
+                            .requestMatchers("/api/**").authenticated()
+                            .anyRequest().permitAll()
                 )
                 .exceptionHandling()
                 .authenticationEntryPoint(new CustomAuthenticationEntryPoint())
