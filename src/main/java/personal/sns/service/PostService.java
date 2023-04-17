@@ -49,4 +49,17 @@ public class PostService {
     }
 
 
+    public void delete(Integer postId, String username) {
+        // 유저 찾기
+        MemberEntity memberEntity = memberRepository.findByName(username).orElseThrow(() -> new SnsException(Errorcode.NOT_EXISTS_USERNAME, String.format("유저이름: %s", username)));
+
+        // 게시글 찾기
+        PostEntity postEntity = postRepository.findById(postId).orElseThrow(() -> new SnsException(Errorcode.NOT_EXISTS_POST, String.format("포스트 Id: %d", postId)));
+
+        // 유저.이름 == 게시글.유저.이름
+        if(!(Objects.equals(memberEntity.getName(), postEntity.getMember().getName()))){
+            new SnsException(Errorcode.INVALID_PERMISSION);
+        }
+        postRepository.delete(postEntity);
+    }
 }
