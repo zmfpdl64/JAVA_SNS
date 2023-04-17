@@ -187,4 +187,102 @@ class PostControllerTest {
                 .andDo(print())
                 .andExpect(status().is(Errorcode.INVALID_TOKEN.getStatus().value()));
     }
+
+    @DisplayName("게시글 삭제 성공")
+    @WithMockUser(username = "username")
+    @Test
+    void 게시글_삭제_성공() throws Exception {
+        //Given
+        String title = "title";
+        String body = "body";
+        Integer postId = 1;
+        //When
+        doNothing().when(memberService).delete(eq(postId), eq("username"));
+
+        //Then
+        mvc.perform(delete("/api/v1/post/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer token")
+                        .content(mapper.writeValueAsBytes(new PostDeleteRequest(postId))))
+                .andDo(print())
+                .andExpect(status().isOk());
+    }
+    @DisplayName("게시글 생성자 삭제자 불일치 실패")
+    @WithMockUser(username = "username")
+    @Test
+    void 게시글_생성자_삭제자_불일치_실패() throws Exception {
+        //Given
+        String title = "title";
+        String body = "body";
+        Integer postId = 1;
+        //When
+        doThrow(new SnsException(Errorcode.INVALID_PERMISSION)).when(postService).delete(postId, "username")
+
+        //Then
+        mvc.perform(delete("/api/v1/post/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer token")
+                        .content(mapper.writeValueAsBytes(new PostDeleteRequest(postId))))
+                .andDo(print())
+                .andExpect(status().isUnauthorized());
+    }
+
+    @DisplayName("게시글 토큰 만료 실패")
+    @WithMockUser(username = "username")
+    @Test
+    void 게시글_토큰_만료_실패() throws Exception {
+        //Given
+        String title = "title";
+        String body = "body";
+        Integer postId = 1;
+        //When
+        doThrow(new SnsException(Errorcode.INVALID_TOKEN)).when(postService).delete(postId, "username")
+
+        //Then
+        mvc.perform(delete("/api/v1/post/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsBytes(new PostDeleteRequest(postId))))
+                .andDo(print())
+                .andExpect(status().isUnauthorized());
+    }
+
+    @DisplayName("게시글 존재 x 실패")
+    @WithMockUser(username = "username")
+    @Test
+    void 게시글_존재_x_실패() throws Exception {
+        //Given
+        String title = "title";
+        String body = "body";
+        Integer postId = 1;
+        //When
+        doThrow(new SnsException(Errorcode.NOT_EXISTS_POST)).when(postService).delete(postId, "username")
+
+        //Then
+        mvc.perform(delete("/api/v1/post/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer token")
+                        .content(mapper.writeValueAsBytes(new PostDeleteRequest(postId))))
+                .andDo(print())
+                .andExpect(status().isNotFound());
+    }
+
+    @DisplayName("게시글 로그인 x 실패")
+    @WithAnonymousUser
+    @Test
+    void 게시글_로그인_x_실패() throws Exception {
+        //Given
+        String title = "title";
+        String body = "body";
+        Integer postId = 1;
+        //When
+        doThrow(new SnsException(Errorcode.INVALID_PERMISSION)).when(postService).delete(postId, "username")
+
+        //Then
+        mvc.perform(delete("/api/v1/post/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsBytes(new PostDeleteRequest(postId))))
+                .andDo(print())
+                .andExpect(status().isUnauthorized());
+    }
+
 }
