@@ -3,6 +3,7 @@ package personal.sns.controller;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.BDDMockito;
 import org.mockito.Mock;
@@ -20,6 +21,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import personal.sns.controller.request.PostCreateRequest;
+import personal.sns.controller.request.PostDeleteRequest;
 import personal.sns.controller.request.PostModifyRequest;
 import personal.sns.domain.MemberRole;
 import personal.sns.domain.Post;
@@ -62,227 +64,240 @@ class PostControllerTest {
     @Autowired
     private ObjectMapper mapper;
 
-    @DisplayName("게시글 작성 권한O 성공")
-    @WithMockUser
-    @Test
-    void 게시글_작성_권한O_성공() throws Exception {
-        //Given
-        String title = "title";
-        String body = "body";
+    @Nested
+    @DisplayName("게시글 생성 테스트 그룹")
+    class createPostTests {
+        @DisplayName("게시글 작성 권한O 성공")
+        @WithMockUser
+        @Test
+        void 게시글_작성_권한O_성공() throws Exception {
+            //Given
+            String title = "title";
+            String body = "body";
 
-        //When
+            //When
 
-        //Then
-        mvc.perform(post("/api/v1/post")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsBytes(new PostCreateRequest(title, body))))
-                .andDo(print())
-                .andExpect(status().isOk());
+            //Then
+            mvc.perform(post("/api/v1/post")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsBytes(new PostCreateRequest(title, body))))
+                    .andDo(print())
+                    .andExpect(status().isOk());
+        }
+
+        @DisplayName("게시글 생성 권한X 실패")
+        @WithAnonymousUser
+        @Test
+        void 게시글_작성_권한X_실패() throws Exception {
+            //Given
+            String title = "title";
+            String body = "body";
+            //When
+
+            //Then
+            mvc.perform(post("/api/v1/post")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsBytes(new PostCreateRequest(title, body))))
+                    .andDo(print())
+                    .andExpect(status().is(Errorcode.INVALID_TOKEN.getStatus().value()));
+        }
     }
 
-    @DisplayName("게시글 작성 권한X 실패")
-    @WithAnonymousUser
-    @Test
-    void 게시글_작성_권한X_실패() throws Exception {
-        //Given
-        String title = "title";
-        String body = "body";
-        //When
+    @DisplayName("게시글 수정 테스트")
+    @Nested
+    public class modifyPost{
+        @DisplayName("게시글 수정 권한O 성공")
+        @WithMockUser(username = "username")
+        @Test
+        void 게시글_수정_권한O_성공() throws Exception {
+            //Given
+            String title = "title";
+            String body = "body";
+            Post post = Post.fromEntity(EntityFixture.getPost1(title, body));
 
-        //Then
-        mvc.perform(post("/api/v1/post")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsBytes(new PostCreateRequest(title, body))))
-                .andDo(print())
-                .andExpect(status().is(Errorcode.INVALID_TOKEN.getStatus().value()));
+            //When
+            when(postService.modify(title, body, "username", 1)).thenReturn(post);
+
+            //Then
+            mvc.perform(put("/api/v1/post/1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsBytes(new PostModifyRequest(title, body))))
+                    .andDo(print())
+                    .andExpect(status().isOk());
+        }
+        @DisplayName("게시글 수정 로그인 X 실패")
+        @WithAnonymousUser()
+        @Test
+        void 게시글_수정_유저이름_존재X_실패() throws Exception {
+            //Given
+            String title = "title";
+            String body = "body";
+            //When
+            doThrow(new SnsException(Errorcode.INVALID_PERMISSION)).when(postService).modify(eq(title), eq(body), eq("username"), eq(1));
+
+            //Then
+            mvc.perform(put("/api/v1/post/1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsBytes(new PostModifyRequest(title, body))))
+                    .andDo(print())
+                    .andExpect(status().isUnauthorized());
+        }
+        @DisplayName("게시글 수정 게시글 존재X 실패")
+        @WithMockUser(username = "username")
+        @Test
+        void 게시글_수정_게시글_존재X_실패() throws Exception {
+            //Given
+            String title = "title";
+            String body = "body";
+
+            //When
+            doThrow(new SnsException(Errorcode.NOT_EXISTS_POST)).when(postService).modify(eq(title), eq(body), eq("username"), eq(1));
+
+            //Then
+            mvc.perform(put("/api/v1/post/{PostId}", 1)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsBytes(new PostModifyRequest(title, body))))
+                    .andDo(print())
+                    .andExpect(status().isNotFound());
+        }
+        @DisplayName("게시글 수정 생성자 수정자 불일치 실패")
+        @WithMockUser(username = "username")
+        @Test
+        void 게시글_수정_생성자_수정자_불일치_실패() throws Exception {
+            //Given
+            String title = "title";
+            String body = "body";
+
+            //When
+            doThrow(new SnsException(Errorcode.INVALID_PERMISSION)).when(postService).modify(eq(title), eq(body), eq("username"), eq(1));
+
+            //Then
+            mvc.perform(put("/api/v1/post/1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsBytes(new PostModifyRequest(title, body))))
+                    .andDo(print())
+                    .andExpect(status().isUnauthorized());
+        }
+        @DisplayName("게시글 수정 토큰만료 실패")
+        @WithMockUser(username = "username")
+        @Test
+        void 게시글_수정_토큰만료_실패() throws Exception {
+            //Given
+            String title = "title";
+            String body = "body";
+            //When
+            doThrow(new SnsException(Errorcode.INVALID_TOKEN)).when(postService).modify(eq(title), eq(body), eq("username"), eq(1));
+
+            //Then
+            mvc.perform(put("/api/v1/post/1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .header("Authorization", "Bearer token")
+                            .content(mapper.writeValueAsBytes(new PostCreateRequest(title, body))))
+                    .andDo(print())
+                    .andExpect(status().is(Errorcode.INVALID_TOKEN.getStatus().value()));
+        }
     }
 
-    @DisplayName("게시글 수정 권한O 성공")
-    @WithMockUser(username = "username")
-    @Test
-    void 게시글_수정_권한O_성공() throws Exception {
-        //Given
-        String title = "title";
-        String body = "body";
-        Post post = Post.fromEntity(EntityFixture.getPost1(title, body));
+    @Nested
+    @DisplayName("게시글 삭제 테스트")
+    public class deletePost{
+        @DisplayName("게시글 삭제 성공")
+        @WithMockUser(username = "username")
+        @Test
+        void 게시글_삭제_성공() throws Exception {
+            //Given
+            String title = "title";
+            String body = "body";
+            Integer postId = 1;
+            //When
+            doNothing().when(postService).delete(eq(postId), eq("username"));
 
-        //When
-        when(postService.modify(title, body, "username", 1)).thenReturn(post);
+            //Then
+            mvc.perform(delete("/api/v1/post/1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .header("Authorization", "Bearer token")
+                            .content(mapper.writeValueAsBytes(new PostDeleteRequest(postId))))
+                    .andDo(print())
+                    .andExpect(status().isOk());
+        }
+        @DisplayName("게시글 삭제 생성자 삭제자 불일치 실패")
+        @WithMockUser(username = "username")
+        @Test
+        void 게시글_삭제_생성자_삭제자_불일치_실패() throws Exception {
+            //Given
+            String title = "title";
+            String body = "body";
+            Integer postId = 1;
+            //When
+            doThrow(new SnsException(Errorcode.INVALID_PERMISSION)).when(postService).delete(postId, "username");
 
-        //Then
-        mvc.perform(put("/api/v1/post/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsBytes(new PostModifyRequest(title, body))))
-                .andDo(print())
-                .andExpect(status().isOk());
-    }
-    @DisplayName("게시글 수정 로그인 X 실패")
-    @WithAnonymousUser()
-    @Test
-    void 게시글_수정_유저이름_존재X_실패() throws Exception {
-        //Given
-        String title = "title";
-        String body = "body";
-        //When
-        doThrow(new SnsException(Errorcode.INVALID_PERMISSION)).when(postService).modify(eq(title), eq(body), eq("username"), eq(1));
+            //Then
+            mvc.perform(delete("/api/v1/post/1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .header("Authorization", "Bearer token")
+                            .content(mapper.writeValueAsBytes(new PostDeleteRequest(postId))))
+                    .andDo(print())
+                    .andExpect(status().isUnauthorized());
+        }
 
-        //Then
-        mvc.perform(put("/api/v1/post/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsBytes(new PostModifyRequest(title, body))))
-                .andDo(print())
-                .andExpect(status().isUnauthorized());
-    }
-    @DisplayName("게시글 수정 게시글 존재X 실패")
-    @WithMockUser(username = "username")
-    @Test
-    void 게시글_수정_게시글_존재X_실패() throws Exception {
-        //Given
-        String title = "title";
-        String body = "body";
+        @DisplayName("게시글 삭제 토큰 만료 실패")
+        @WithMockUser(username = "username")
+        @Test
+        void 게시글_삭제_토큰_만료_실패() throws Exception {
+            //Given
+            String title = "title";
+            String body = "body";
+            Integer postId = 1;
+            //When
+            doThrow(new SnsException(Errorcode.INVALID_TOKEN)).when(postService).delete(postId, "username");
 
-        //When
-        doThrow(new SnsException(Errorcode.NOT_EXISTS_POST)).when(postService).modify(eq(title), eq(body), eq("username"), eq(1));
+            //Then
+            mvc.perform(delete("/api/v1/post/1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsBytes(new PostDeleteRequest(postId))))
+                    .andDo(print())
+                    .andExpect(status().isUnauthorized());
+        }
 
-        //Then
-        mvc.perform(put("/api/v1/post/{PostId}", 1)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsBytes(new PostModifyRequest(title, body))))
-                .andDo(print())
-                .andExpect(status().isNotFound());
-    }
-    @DisplayName("게시글 수정 생성자 수정자 불일치 실패")
-    @WithMockUser(username = "username")
-    @Test
-    void 게시글_수정_생성자_수정자_불일치_실패() throws Exception {
-        //Given
-        String title = "title";
-        String body = "body";
+        @DisplayName("게시글 삭제 존재 x 실패")
+        @WithMockUser(username = "username")
+        @Test
+        void 게시글_삭제_존재_x_실패() throws Exception {
+            //Given
+            String title = "title";
+            String body = "body";
+            Integer postId = 1;
+            //When
+            doThrow(new SnsException(Errorcode.NOT_EXISTS_POST)).when(postService).delete(postId, "username");
 
-        //When
-        doThrow(new SnsException(Errorcode.INVALID_PERMISSION)).when(postService).modify(eq(title), eq(body), eq("username"), eq(1));
+            //Then
+            mvc.perform(delete("/api/v1/post/1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .header("Authorization", "Bearer token")
+                            .content(mapper.writeValueAsBytes(new PostDeleteRequest(postId))))
+                    .andDo(print())
+                    .andExpect(status().isNotFound());
+        }
 
-        //Then
-        mvc.perform(put("/api/v1/post/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsBytes(new PostModifyRequest(title, body))))
-                .andDo(print())
-                .andExpect(status().isUnauthorized());
-    }
-    @DisplayName("게시글 수정 토큰만료 실패")
-    @WithMockUser(username = "username")
-    @Test
-    void 게시글_수정_토큰만료_실패() throws Exception {
-        //Given
-        String title = "title";
-        String body = "body";
-        //When
-        doThrow(new SnsException(Errorcode.INVALID_TOKEN)).when(postService).modify(eq(title), eq(body), eq("username"), eq(1));
+        @DisplayName("게시글 삭제 로그인 x 실패")
+        @WithAnonymousUser
+        @Test
+        void 게시글_삭제_로그인_x_실패() throws Exception {
+            //Given
+            String title = "title";
+            String body = "body";
+            Integer postId = 1;
+            //When
+            doThrow(new SnsException(Errorcode.INVALID_PERMISSION)).when(postService).delete(postId, "username");
 
-        //Then
-        mvc.perform(put("/api/v1/post/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header("Authorization", "Bearer token")
-                        .content(mapper.writeValueAsBytes(new PostCreateRequest(title, body))))
-                .andDo(print())
-                .andExpect(status().is(Errorcode.INVALID_TOKEN.getStatus().value()));
-    }
-
-    @DisplayName("게시글 삭제 성공")
-    @WithMockUser(username = "username")
-    @Test
-    void 게시글_삭제_성공() throws Exception {
-        //Given
-        String title = "title";
-        String body = "body";
-        Integer postId = 1;
-        //When
-        doNothing().when(postService).delete(eq(postId), eq("username"));
-
-        //Then
-        mvc.perform(delete("/api/v1/post/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header("Authorization", "Bearer token")
-                        .content(mapper.writeValueAsBytes(new PostDeleteRequest(postId))))
-                .andDo(print())
-                .andExpect(status().isOk());
-    }
-    @DisplayName("게시글 생성자 삭제자 불일치 실패")
-    @WithMockUser(username = "username")
-    @Test
-    void 게시글_생성자_삭제자_불일치_실패() throws Exception {
-        //Given
-        String title = "title";
-        String body = "body";
-        Integer postId = 1;
-        //When
-        doThrow(new SnsException(Errorcode.INVALID_PERMISSION)).when(postService).delete(postId, "username");
-
-        //Then
-        mvc.perform(delete("/api/v1/post/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header("Authorization", "Bearer token")
-                        .content(mapper.writeValueAsBytes(new PostDeleteRequest(postId))))
-                .andDo(print())
-                .andExpect(status().isUnauthorized());
+            //Then
+            mvc.perform(delete("/api/v1/post/1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsBytes(new PostDeleteRequest(postId))))
+                    .andDo(print())
+                    .andExpect(status().isUnauthorized());
+        }
     }
 
-    @DisplayName("게시글 토큰 만료 실패")
-    @WithMockUser(username = "username")
-    @Test
-    void 게시글_토큰_만료_실패() throws Exception {
-        //Given
-        String title = "title";
-        String body = "body";
-        Integer postId = 1;
-        //When
-        doThrow(new SnsException(Errorcode.INVALID_TOKEN)).when(postService).delete(postId, "username");
-
-        //Then
-        mvc.perform(delete("/api/v1/post/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsBytes(new PostDeleteRequest(postId))))
-                .andDo(print())
-                .andExpect(status().isUnauthorized());
-    }
-
-    @DisplayName("게시글 존재 x 실패")
-    @WithMockUser(username = "username")
-    @Test
-    void 게시글_존재_x_실패() throws Exception {
-        //Given
-        String title = "title";
-        String body = "body";
-        Integer postId = 1;
-        //When
-        doThrow(new SnsException(Errorcode.NOT_EXISTS_POST)).when(postService).delete(postId, "username");
-
-        //Then
-        mvc.perform(delete("/api/v1/post/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header("Authorization", "Bearer token")
-                        .content(mapper.writeValueAsBytes(new PostDeleteRequest(postId))))
-                .andDo(print())
-                .andExpect(status().isNotFound());
-    }
-
-    @DisplayName("게시글 로그인 x 실패")
-    @WithAnonymousUser
-    @Test
-    void 게시글_로그인_x_실패() throws Exception {
-        //Given
-        String title = "title";
-        String body = "body";
-        Integer postId = 1;
-        //When
-        doThrow(new SnsException(Errorcode.INVALID_PERMISSION)).when(postService).delete(postId, "username");
-
-        //Then
-        mvc.perform(delete("/api/v1/post/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsBytes(new PostDeleteRequest(postId))))
-                .andDo(print())
-                .andExpect(status().isUnauthorized());
-    }
 
 }
