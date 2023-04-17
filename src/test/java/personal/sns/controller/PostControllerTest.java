@@ -4,26 +4,40 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.BDDMockito;
+import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.test.context.support.WithAnonymousUser;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import personal.sns.controller.request.PostCreateRequest;
+import personal.sns.controller.request.PostModifyRequest;
+import personal.sns.domain.MemberRole;
+import personal.sns.domain.Post;
+import personal.sns.domain.entity.MemberEntity;
+import personal.sns.domain.entity.PostEntity;
 import personal.sns.exception.Errorcode;
 import personal.sns.exception.SnsException;
+import personal.sns.fixture.EntityFixture;
 import personal.sns.service.MemberService;
 import personal.sns.service.PostService;
+import personal.sns.util.JwtTokenUtils;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -38,6 +52,9 @@ class PostControllerTest {
 
     @MockBean
     private MemberService memberService;
+
+    @Autowired
+    private BCryptPasswordEncoder encoder;
 
     @Autowired
     private MockMvc mvc;
@@ -70,12 +87,102 @@ class PostControllerTest {
         //Given
         String title = "title";
         String body = "body";
-        String token = "token";
         //When
 
         //Then
         mvc.perform(post("/api/v1/post")
                         .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsBytes(new PostCreateRequest(title, body))))
+                .andDo(print())
+                .andExpect(status().is(Errorcode.INVALID_TOKEN.getStatus().value()));
+    }
+
+    @DisplayName("게시글 수정 권한O 성공")
+    @WithMockUser(username = "username")
+    @Test
+    void 게시글_수정_권한O_성공() throws Exception {
+        //Given
+        String title = "title";
+        String body = "body";
+        Post post = Post.fromEntity(EntityFixture.getPost1(title, body));
+
+        //When
+        when(postService.modify(title, body, "username", 1)).thenReturn(post);
+
+        //Then
+        mvc.perform(put("/api/v1/post/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsBytes(new PostModifyRequest(title, body))))
+                .andDo(print())
+                .andExpect(status().isOk());
+    }
+    @DisplayName("게시글 수정 로그인 X 실패")
+    @WithAnonymousUser()
+    @Test
+    void 게시글_수정_유저이름_존재X_실패() throws Exception {
+        //Given
+        String title = "title";
+        String body = "body";
+        //When
+        doThrow(new SnsException(Errorcode.INVALID_PERMISSION)).when(postService).modify(eq(title), eq(body), eq("username"), eq(1));
+
+        //Then
+        mvc.perform(put("/api/v1/post/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsBytes(new PostModifyRequest(title, body))))
+                .andDo(print())
+                .andExpect(status().isUnauthorized());
+    }
+    @DisplayName("게시글 수정 게시글 존재X 실패")
+    @WithMockUser(username = "username")
+    @Test
+    void 게시글_수정_게시글_존재X_실패() throws Exception {
+        //Given
+        String title = "title";
+        String body = "body";
+
+        //When
+        doThrow(new SnsException(Errorcode.NOT_EXISTS_POST)).when(postService).modify(eq(title), eq(body), eq("username"), eq(1));
+
+        //Then
+        mvc.perform(put("/api/v1/post/{PostId}", 1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsBytes(new PostModifyRequest(title, body))))
+                .andDo(print())
+                .andExpect(status().isNotFound());
+    }
+    @DisplayName("게시글 수정 생성자 수정자 불일치 실패")
+    @WithMockUser(username = "username")
+    @Test
+    void 게시글_수정_생성자_수정자_불일치_실패() throws Exception {
+        //Given
+        String title = "title";
+        String body = "body";
+
+        //When
+        doThrow(new SnsException(Errorcode.INVALID_PERMISSION)).when(postService).modify(eq(title), eq(body), eq("username"), eq(1));
+
+        //Then
+        mvc.perform(put("/api/v1/post/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsBytes(new PostModifyRequest(title, body))))
+                .andDo(print())
+                .andExpect(status().isUnauthorized());
+    }
+    @DisplayName("게시글 수정 토큰만료 실패")
+    @WithMockUser(username = "username")
+    @Test
+    void 게시글_수정_토큰만료_실패() throws Exception {
+        //Given
+        String title = "title";
+        String body = "body";
+        //When
+        doThrow(new SnsException(Errorcode.INVALID_TOKEN)).when(postService).modify(eq(title), eq(body), eq("username"), eq(1));
+
+        //Then
+        mvc.perform(put("/api/v1/post/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer token")
                         .content(mapper.writeValueAsBytes(new PostCreateRequest(title, body))))
                 .andDo(print())
                 .andExpect(status().is(Errorcode.INVALID_TOKEN.getStatus().value()));
