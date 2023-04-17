@@ -165,5 +165,83 @@ class PostServiceTest {
                 postService.modify("modifyTitle", "modifyBody", EntityFixture.username1, EntityFixture.PostId1)
         );
     }
-    
+
+    @DisplayName("게시글 삭제 로그인상태 성공")
+    @Test
+    void 게시글_삭제_로그인_상태_성공() {
+        //Given
+        String title = "title";
+        String body = "body";
+        PostEntity post = EntityFixture.getPost1(title, body);
+        MemberEntity member = post.getMember();
+
+        //When
+        when(memberRepository.findByName(eq(member.getName()))).thenReturn(Optional.of(member));
+        when(postRepository.findById(eq(post.getId()))).thenReturn(Optional.of(post));
+        doNothing().when(postRepository).delete(post);
+
+        //Then
+        assertDoesNotThrow(() ->
+                postService.delete(post.getId(), member.getName())
+        );
+    }
+
+    @DisplayName("게시글 유저 존재 X 실패")
+    @Test
+    void 게시글_유저_존재X_실패() {
+        //Given
+        String title = "title";
+        String body = "body";
+        PostEntity post = EntityFixture.getPost1(title, body);
+        MemberEntity member = post.getMember();
+
+        //When
+        when(memberRepository.findByName(eq(member.getName()))).thenThrow(new SnsException(Errorcode.NOT_EXISTS_USERNAME));
+//        when(postRepository.findById(eq(post.getId()))).thenReturn(Optional.of(post));
+        doNothing().when(postRepository).delete(post);
+
+        //Then
+        assertThrows(SnsException.class, () ->
+                postService.delete(post.getId(), member.getName())
+        );
+    }
+
+    @DisplayName("게시글 게시글 존재 x 실패")
+    @Test
+    void 게시글_존재X_실패() {
+        //Given
+        String title = "title";
+        String body = "body";
+        PostEntity post = EntityFixture.getPost1(title, body);
+        MemberEntity member = post.getMember();
+
+        //When
+        when(memberRepository.findByName(eq(member.getName()))).thenReturn(Optional.of(member));
+        when(postRepository.findById(eq(post.getId()))).thenReturn(Optional.empty());
+        doNothing().when(postRepository).delete(post);
+
+        //Then
+        assertThrows(SnsException.class, () ->
+                postService.delete(post.getId(), member.getName())
+        );
+    }
+
+    @DisplayName("게시글 생성자 삭제자 불일치 실패")
+    @Test
+    void 게시글_생성자_삭제자_불일치_실패() {
+        //Given
+        String title = "title";
+        String body = "body";
+        PostEntity post = EntityFixture.getPost1(title, body);
+
+        //When
+        when(memberRepository.findByName("deleteusername")).thenReturn(Optional.of(EntityFixture.of("deleteusername", "password")));
+        when(postRepository.findById(eq(post.getId()))).thenReturn(Optional.of(post));
+        doNothing().when(postRepository).delete(post);
+
+        //Then
+        assertThrows(SnsException.class, () ->
+                postService.delete(post.getId(), post.getMember().getName())
+        );
+    }
 }

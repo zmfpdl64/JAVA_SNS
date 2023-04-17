@@ -197,7 +197,7 @@ class PostControllerTest {
         String body = "body";
         Integer postId = 1;
         //When
-        doNothing().when(memberService).delete(eq(postId), eq("username"));
+        doNothing().when(postService).delete(eq(postId), eq("username"));
 
         //Then
         mvc.perform(delete("/api/v1/post/1")
@@ -216,7 +216,7 @@ class PostControllerTest {
         String body = "body";
         Integer postId = 1;
         //When
-        doThrow(new SnsException(Errorcode.INVALID_PERMISSION)).when(postService).delete(postId, "username")
+        doThrow(new SnsException(Errorcode.INVALID_PERMISSION)).when(postService).delete(postId, "username");
 
         //Then
         mvc.perform(delete("/api/v1/post/1")
@@ -236,7 +236,7 @@ class PostControllerTest {
         String body = "body";
         Integer postId = 1;
         //When
-        doThrow(new SnsException(Errorcode.INVALID_TOKEN)).when(postService).delete(postId, "username")
+        doThrow(new SnsException(Errorcode.INVALID_TOKEN)).when(postService).delete(postId, "username");
 
         //Then
         mvc.perform(delete("/api/v1/post/1")
@@ -255,7 +255,7 @@ class PostControllerTest {
         String body = "body";
         Integer postId = 1;
         //When
-        doThrow(new SnsException(Errorcode.NOT_EXISTS_POST)).when(postService).delete(postId, "username")
+        doThrow(new SnsException(Errorcode.NOT_EXISTS_POST)).when(postService).delete(postId, "username");
 
         //Then
         mvc.perform(delete("/api/v1/post/1")
@@ -275,7 +275,7 @@ class PostControllerTest {
         String body = "body";
         Integer postId = 1;
         //When
-        doThrow(new SnsException(Errorcode.INVALID_PERMISSION)).when(postService).delete(postId, "username")
+        doThrow(new SnsException(Errorcode.INVALID_PERMISSION)).when(postService).delete(postId, "username");
 
         //Then
         mvc.perform(delete("/api/v1/post/1")
