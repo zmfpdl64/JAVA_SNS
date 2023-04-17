@@ -7,7 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
+import personal.sns.domain.entity.MemberEntity;
 import personal.sns.domain.entity.PostEntity;
+import personal.sns.exception.Errorcode;
 import personal.sns.exception.SnsException;
 import personal.sns.fixture.EntityFixture;
 import personal.sns.repository.MemberRepository;
@@ -17,8 +19,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 
 @DisplayName("게시글 서비스")
@@ -69,4 +70,100 @@ class PostServiceTest {
     }
 
 
+    @DisplayName("게시글 수정 로그인상태 성공")
+    @Test
+    void 게시글_수정_로그인_상태_성공() {
+        //Given
+        String title = "title";
+        String body = "body";
+        String username = "username";
+        PostEntity post = EntityFixture.getPost1(title, body);
+        MemberEntity member = post.getMember();
+
+        //When
+        when(memberRepository.findByName(eq(member.getName()))).thenReturn(Optional.of(member));
+        when(postRepository.findById(eq(post.getId()))).thenReturn(Optional.of(post));
+        when(postRepository.save(post)).thenReturn(post);
+
+        //Then
+        assertDoesNotThrow(() ->
+                postService.modify(post.getTitle(), post.getBody(), member.getName(), post.getId())
+        );
+    }
+
+    @DisplayName("게시글 수정 유저이름 못찾음 실패")
+    @Test
+    void 게시글_수정_유저이름_못찾음_실패() {
+        //Given
+        String username = "username";
+        String password = "password";
+        String title = "title";
+        String body = "body";
+
+        //When
+        when(memberRepository.findByName(username)).thenReturn(Optional.empty());
+        when(postRepository.save(EntityFixture.getPost1(title, body))).thenThrow(new SnsException(Errorcode.NOT_EXISTS_USERNAME));
+
+        //Then
+        assertThrows(SnsException.class, () ->
+                postService.modify("modifyTitle", "modifyBody", EntityFixture.username1, EntityFixture.PostId1)
+                );
+    }
+    @DisplayName("게시글 수정 토큰만료 실패")
+    @Test
+    void 게시글_작성_토큰만료_실패() {
+        //Given
+        String username = "username";
+        String password = "password";
+        String title = "title";
+        String body = "body";
+
+        //When
+        when(memberRepository.findByName(username)).thenReturn(Optional.of(EntityFixture.of()));
+        when(postRepository.save(any())).thenReturn(mock(PostEntity.class));
+
+        //Then
+        assertThrows(SnsException.class, () ->
+                postService.modify("modifyTitle", "modifyBody", EntityFixture.username1, EntityFixture.PostId1)
+        );
+    }
+    @DisplayName("게시글 수정 생성자 수정자 불일치 실패")
+    @Test
+    void 게시글_수정_생성자_수정자_불일치_실패() {
+        //Given
+        String username = "username";
+        String password = "password";
+        String title = "title";
+        String body = "body";
+
+        //When
+        when(memberRepository.findByName(username)).thenReturn(Optional.of(EntityFixture.of()));
+        when(postRepository.save(EntityFixture.getPost1(title, body))).thenReturn(EntityFixture.getPost1(title, body));
+
+
+        //Then
+
+        assertThrows(SnsException.class, () ->
+                postService.modify("modifyTitle", "modifyBody", EntityFixture.username1, EntityFixture.PostId1)
+        );
+    }
+    @DisplayName("게시글 수정 게시글 못찾음 실패")
+    @Test
+    void 게시글_수정_게시글_못찾음_실패() {
+        //Given
+        String username = "username";
+        String password = "password";
+        String title = "title";
+        String body = "body";
+
+        //When
+        when(memberRepository.findByName(username)).thenReturn(Optional.of(EntityFixture.of()));
+        when(postRepository.save(any())).thenReturn(mock(PostEntity.class));
+
+        //Then
+        assertThrows(SnsException.class, () ->
+                postService.modify("modifyTitle", "modifyBody", EntityFixture.username1, EntityFixture.PostId1)
+        );
+    }
+    
 }

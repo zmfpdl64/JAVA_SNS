@@ -50,7 +50,6 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                     member, null, member.getAuthorities());
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);
-            log.info("정상적으로 동작 {}", member.getUsername());
         } catch (RuntimeException e) {
             log.error("Error occurs while validating. {}", e.toString());
             filterChain.doFilter(request, response);
