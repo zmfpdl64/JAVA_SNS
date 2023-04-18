@@ -30,6 +30,7 @@ public class AuthenticationConfig{
                 .authorizeHttpRequests(authorize ->
                     authorize
                             .requestMatchers("/api/v1/user/**").permitAll()
+                            .requestMatchers("/api/*/post/list").permitAll()
                             .requestMatchers("/api/**").authenticated()
                             .anyRequest().permitAll()
                 )
