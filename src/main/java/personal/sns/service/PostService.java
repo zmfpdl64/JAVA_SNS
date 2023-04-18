@@ -3,6 +3,8 @@ package personal.sns.service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import personal.sns.domain.Post;
 import personal.sns.domain.entity.MemberEntity;
@@ -61,5 +63,9 @@ public class PostService {
             new SnsException(Errorcode.INVALID_PERMISSION);
         }
         postRepository.delete(postEntity);
+    }
+
+    public Page<Post> getList(Pageable pageable) {
+        return postRepository.findAll(pageable).map(Post::fromEntity);
     }
 }

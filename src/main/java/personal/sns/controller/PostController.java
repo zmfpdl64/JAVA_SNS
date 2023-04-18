@@ -2,12 +2,15 @@ package personal.sns.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import personal.sns.controller.request.PostCreateRequest;
 import personal.sns.controller.request.PostDeleteRequest;
 import personal.sns.controller.request.PostModifyRequest;
 import personal.sns.controller.response.PostModifyResponse;
+import personal.sns.controller.response.PostResponse;
 import personal.sns.controller.response.Response;
 import personal.sns.domain.Post;
 import personal.sns.service.MemberService;
@@ -25,6 +28,12 @@ public class PostController {
 
     private final PostService postService;
     private final MemberService memberService;
+
+    @GetMapping("/list")
+    public Response<Page<PostResponse>> getPostList(Pageable pageable, Authentication authentication) {
+        Page<Post> lists = postService.getList(pageable);
+        return Response.success();
+    }
 
     @PostMapping
     public Response<Void> createPost(@RequestBody PostCreateRequest request, Authentication authentication){

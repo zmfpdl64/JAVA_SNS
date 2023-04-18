@@ -12,6 +12,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -33,6 +35,8 @@ import personal.sns.fixture.EntityFixture;
 import personal.sns.service.MemberService;
 import personal.sns.service.PostService;
 import personal.sns.util.JwtTokenUtils;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -297,6 +301,28 @@ class PostControllerTest {
                     .andDo(print())
                     .andExpect(status().isUnauthorized());
         }
+    }
+
+    @Nested
+    @DisplayName("피드 목록 테스트")
+    class feedList{
+        @DisplayName("게시글 목록 가져오기 성공")
+        @WithAnonymousUser
+        @Test
+        void 게시글_목록_가져오기_성공() throws Exception {
+            //Given
+            Pageable pageable = mock(Pageable.class);
+
+            //When
+            when(postService.getList(pageable)).thenReturn(Page.empty());
+
+            //Then
+            mvc.perform(get("/api/v1/post/list")
+                    .contentType("application/json")
+            ).andExpect(status().isOk());
+        }
+
+
     }
 
 
