@@ -7,6 +7,8 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ActiveProfiles;
 import personal.sns.domain.entity.MemberEntity;
 import personal.sns.domain.entity.PostEntity;
@@ -259,4 +261,23 @@ class PostServiceTest {
             );
         }
     }
+    @Nested
+    @DisplayName("게시글 목록 테스트")
+    class getPostList{
+
+        @DisplayName("게시글 목록 가져오기 성공")
+        @Test
+        void 게시글_목록_가져오기_성공() {
+            //Given
+            Pageable page = mock(Pageable.class);
+
+            //When
+            when(postRepository.findAll(page)).thenReturn(Page.empty());
+
+            //Then
+            assertDoesNotThrow(() -> postService.getList(page));
+        }
+
+    }
+
 }
