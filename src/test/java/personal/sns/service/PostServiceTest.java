@@ -9,6 +9,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import personal.sns.domain.entity.MemberEntity;
 import personal.sns.domain.entity.PostEntity;
@@ -276,6 +277,18 @@ class PostServiceTest {
 
             //Then
             assertDoesNotThrow(() -> postService.getList(page));
+        }
+
+        @DisplayName("게시글 목록 내 것 가져오기 성공")
+        @Test
+        void 게시글_목록_내_것_가져오기_성공() {
+            //Given
+            Pageable pageable = mock(Pageable.class);
+            //When
+            when(postRepository.findByMemberName(any(), eq("username"))).thenReturn(Page.empty());
+
+            //Then
+            assertDoesNotThrow(() -> postService.getMyPost(pageable, "username"));
         }
 
     }

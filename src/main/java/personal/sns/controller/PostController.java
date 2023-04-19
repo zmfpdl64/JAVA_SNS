@@ -32,7 +32,12 @@ public class PostController {
     @GetMapping("/list")
     public Response<Page<PostResponse>> getPostList(Pageable pageable, Authentication authentication) {
         Page<Post> lists = postService.getList(pageable);
-        return Response.success();
+        return Response.success(lists.map(PostResponse::fromPost));
+    }
+    @GetMapping("/my")
+    public Response<Page<PostResponse>> getMyPost(Pageable pageable, Authentication authentication) {
+        Page<Post> lists = postService.getMyPost(pageable, authentication.getName());
+        return Response.success(lists.map(PostResponse::fromPost));
     }
 
     @PostMapping

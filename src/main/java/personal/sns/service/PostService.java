@@ -68,4 +68,8 @@ public class PostService {
     public Page<Post> getList(Pageable pageable) {
         return postRepository.findAll(pageable).map(Post::fromEntity);
     }
+
+    public Page<Post> getMyPost(Pageable pageable, String username) {
+        return postRepository.findByMemberName(pageable, username).map(Post::fromEntity);
+    }
 }
