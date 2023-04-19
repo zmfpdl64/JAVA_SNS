@@ -311,15 +311,63 @@ class PostControllerTest {
         @Test
         void 게시글_목록_가져오기_성공() throws Exception {
             //Given
-            Pageable pageable = mock(Pageable.class);
 
             //When
-            when(postService.getList(pageable)).thenReturn(Page.empty());
+            when(postService.getList(any())).thenReturn(Page.empty());
 
             //Then
             mvc.perform(get("/api/v1/post/list")
                     .contentType("application/json")
             ).andExpect(status().isOk());
+        }
+
+        @DisplayName("게시글 목록 본인 포스트 가져오기 성공")
+        @WithMockUser(username="username")
+        @Test
+        void 게시글_목록_본인_포스트_가져오기_성공() throws Exception {
+            //Given
+            Pageable pageable = mock(Pageable.class);
+
+            //When
+            when(postService.getMyPost(any(), any())).thenReturn(Page.empty());
+
+            //Then
+            mvc.perform(get("/api/v1/post/my")
+                    .contentType("application/json")
+            ).andExpect(status().isOk());
+        }
+
+        @DisplayName("게시글 목록 로그인 X 실패")
+        @WithAnonymousUser
+        @Test
+        void 게시글_목록_본인_로그인X_실패() throws Exception {
+            //Given
+            Pageable pageable = mock(Pageable.class);
+
+            //When
+            when(postService.getMyPost(any(), any())).thenThrow(new SnsException(Errorcode.INVALID_TOKEN));
+
+            //Then
+            mvc.perform(get("/api/v1/post/my")
+                    .contentType("application/json")
+                    .header("Authoriaztion", "Baerer token")
+            ).andExpect(status().is(Errorcode.INVALID_TOKEN.getStatus().value()));
+        }
+
+        @DisplayName("게시글 목록 토큰 만료 실패")
+        @Test
+        void 게시글_목록_본인_토큰만료_실패() throws Exception {
+            //Given
+            Pageable pageable = mock(Pageable.class);
+
+            //When
+            when(postService.getMyPost(any(), any())).thenThrow(new SnsException(Errorcode.INVALID_TOKEN));
+
+            //Then
+            mvc.perform(get("/api/v1/post/my")
+                    .contentType("application/json")
+                    .header("Authoriaztion", "Baerer token")
+            ).andExpect(status().is(Errorcode.INVALID_TOKEN.getStatus().value()));
         }
 
 
