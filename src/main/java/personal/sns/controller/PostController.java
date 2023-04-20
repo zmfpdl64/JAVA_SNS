@@ -1,5 +1,6 @@
 package personal.sns.controller;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -64,6 +65,11 @@ public class PostController {
     public Response<Void> like(@PathVariable("postId") Integer postId, Authentication authentication) {
         postService.like(postId, authentication.getName());
         return Response.success();
+    }
+
+    @GetMapping("/{postId}/likecount")
+    public Response<Integer> likeCount(@PathVariable("postId") Integer postId, Authentication authentication) {
+        return Response.success(postService.likeCount(postId));
     }
 
 
