@@ -27,6 +27,7 @@ import personal.sns.controller.request.PostDeleteRequest;
 import personal.sns.controller.request.PostModifyRequest;
 import personal.sns.domain.MemberRole;
 import personal.sns.domain.Post;
+import personal.sns.domain.entity.LikeEntity;
 import personal.sns.domain.entity.MemberEntity;
 import personal.sns.domain.entity.PostEntity;
 import personal.sns.exception.Errorcode;
@@ -373,5 +374,72 @@ class PostControllerTest {
 
     }
 
+    @Nested
+    @DisplayName("게시글 좋아요 테스트")
+    class LikeTest{
+        @DisplayName("게시글 좋아요 성공")
+        @WithMockUser(username = "username")
+        @Test
+        void 게시글_좋아요_성공() throws Exception {
+        //Given
+            Integer postId = 1;
+
+        //When
+            doNothing().when(postService).like(anyInt(), any());
+
+        //Then
+            mvc.perform(post("/api/v1/post/{postId}/likes", postId)
+                    .contentType("application/json")
+            ).andExpect(status().isOk());
+        }
+
+        @DisplayName("게시글 좋아요 로그인 X 실패")
+        @WithAnonymousUser
+        @Test
+        void 게시글_좋아요_로그인_X_실패() throws Exception {
+            //Given
+            Integer postId = 1;
+
+            //When
+            doThrow(new SnsException(Errorcode.INVALID_TOKEN)).when(postService).like(any(), any());
+
+            //Then
+            mvc.perform(post("/api/v1/post/{postId}/likes", postId)
+                    .contentType("application/json")
+            ).andExpect(status().is(Errorcode.INVALID_TOKEN.getStatus().value()));
+        }
+
+        @DisplayName("게시글 좋아요 이미 클릭 실패")
+        @WithMockUser
+        @Test
+        void 게시글_좋아요_중복클릭_실패() throws Exception {
+            //Given
+            Integer postId = 1;
+
+            //When
+            doThrow(new SnsException(Errorcode.ALREADY_LIKE)).when(postService).like(any(), any());
+
+            //Then
+            mvc.perform(post("/api/v1/post/{postId}/likes", postId)
+                    .contentType("application/json")
+            ).andExpect(status().is(Errorcode.ALREADY_LIKE.getStatus().value()));
+        }
+        @DisplayName("게시글 좋아요 게시글 존재 X 실패")
+        @WithMockUser
+        @Test
+        void 게시글_좋아요_게시글_존재_X_실패() throws Exception {
+            //Given
+            Integer postId = 1;
+
+            //When
+            doThrow(new SnsException(Errorcode.NOT_EXISTS_POST)).when(postService).like(any(), any());
+
+            //Then
+            mvc.perform(post("/api/v1/post/{postId}/likes", postId)
+                    .contentType("application/json")
+            ).andExpect(status().is(Errorcode.NOT_EXISTS_POST.getStatus().value()));
+        }
+
+    }
 
 }
