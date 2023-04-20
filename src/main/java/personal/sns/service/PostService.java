@@ -48,12 +48,13 @@ public class PostService {
         }
         postEntity.setTitle(title);
         postEntity.setBody(body);
-        PostEntity save = postRepository.save(postEntity);
+        PostEntity save = postRepository.saveAndFlush(postEntity);
 
         return Post.fromEntity(save);
     }
 
 
+    @Transactional
     public void delete(Integer postId, String username) {
         // 유저 찾기
         MemberEntity memberEntity = memberRepository.findByName(username).orElseThrow(() -> new SnsException(Errorcode.NOT_EXISTS_USERNAME, String.format("유저이름: %s", username)));
@@ -63,7 +64,7 @@ public class PostService {
 
         // 유저.이름 == 게시글.유저.이름
         if(!(Objects.equals(memberEntity.getName(), postEntity.getMember().getName()))){
-            new SnsException(Errorcode.INVALID_PERMISSION);
+            throw new SnsException(Errorcode.INVALID_PERMISSION);
         }
         postRepository.delete(postEntity);
     }
@@ -76,6 +77,7 @@ public class PostService {
         return postRepository.findByMemberName(pageable, username).map(Post::fromEntity);
     }
 
+    @Transactional
     public void like(Integer postId, String username) {
         MemberEntity memberEntity = memberRepository.findByName(username).orElseThrow(() -> new SnsException(Errorcode.NOT_EXISTS_USERNAME, String.format("유저이름: %s", username)));
 
