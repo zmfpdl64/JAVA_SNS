@@ -15,8 +15,8 @@ public enum Errorcode {
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "토큰이 유효하지 않습니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "예상치 못한 에러가 발생했습니다"),
     INVALID_PERMISSION(HttpStatus.UNAUTHORIZED, "회원님은 권한이 없습니다."),
-    NOT_EXISTS_POST(HttpStatus.NOT_FOUND, "게시글이 존재하지 않습니다.");
-
+    NOT_EXISTS_POST(HttpStatus.NOT_FOUND, "게시글이 존재하지 않습니다."),
+    ALREADY_LIKE(HttpStatus.CONFLICT, "이미 좋아요를 눌렀습니다.");
     private final HttpStatus status;
     private final String message;
 
