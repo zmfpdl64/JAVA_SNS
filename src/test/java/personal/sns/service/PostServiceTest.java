@@ -99,7 +99,7 @@ class PostServiceTest {
             //When
             when(memberRepository.findByName(eq(member.getName()))).thenReturn(Optional.of(member));
             when(postRepository.findById(eq(post.getId()))).thenReturn(Optional.of(post));
-            when(postRepository.save(post)).thenReturn(post);
+            when(postRepository.saveAndFlush(post)).thenReturn(post);
 
             //Then
             assertDoesNotThrow(() ->
