@@ -11,11 +11,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
+import personal.sns.domain.entity.LikeEntity;
 import personal.sns.domain.entity.MemberEntity;
 import personal.sns.domain.entity.PostEntity;
 import personal.sns.exception.Errorcode;
 import personal.sns.exception.SnsException;
 import personal.sns.fixture.EntityFixture;
+import personal.sns.repository.LikeEntityRepository;
 import personal.sns.repository.MemberRepository;
 import personal.sns.repository.PostEntityRepository;
 
@@ -39,6 +41,9 @@ class PostServiceTest {
 
     @MockBean
     private MemberRepository memberRepository;
+
+    @MockBean
+    private LikeEntityRepository likeRepository;
 
     @Nested
     @DisplayName("게시글 작성 테스트")
@@ -291,6 +296,60 @@ class PostServiceTest {
             assertDoesNotThrow(() -> postService.getMyPost(pageable, "username"));
         }
 
+    }
+
+    @Nested
+    @DisplayName("게시글 좋아요 테스트")
+    class LikeTest{
+        @DisplayName("게시글 좋아요 성공")
+        @Test
+        void 게시글_좋아요_성공() {
+            //Given
+            Integer postId = 1;
+            String username = "username";
+
+            //When
+            when(postRepository.findById(postId)).thenReturn(Optional.of(mock(PostEntity.class)));
+            when(memberRepository.findByName(username)).thenReturn(Optional.of(mock(MemberEntity.class)));
+            when(likeRepository.findByMemberAndPost(mock(MemberEntity.class), mock(PostEntity.class))).thenReturn(Optional.empty());
+            when(likeRepository.save(any(LikeEntity.class))).thenReturn(mock(LikeEntity.class));
+
+            //Then
+            assertDoesNotThrow(()-> postService.like(postId, username));
+        }
+        @DisplayName("게시글 좋아요 유저 X 실패")
+        @Test
+        void 게시글_좋아요_유저X_실패() {
+            //Given
+            Integer postId = 1;
+            String username = "username";
+
+            //When
+            when(postRepository.findById(postId)).thenReturn(Optional.of(mock(PostEntity.class)));
+            when(memberRepository.findByName(username)).thenReturn(Optional.empty());
+            when(likeRepository.findByMemberAndPost(mock(MemberEntity.class), mock(PostEntity.class))).thenReturn(Optional.empty());
+            when(likeRepository.save(any(LikeEntity.class))).thenReturn(mock(LikeEntity.class));
+
+            //Then
+            assertThrows(SnsException.class, ()-> postService.like(postId, username));
+        }
+
+        @DisplayName("게시글 좋아요 이미 좋아요 실패")
+        @Test
+        void 게시글_좋아요_이미_좋아요_실패() {
+            //Given
+            Integer postId = 1;
+            String username = "username";
+
+            //When
+            when(postRepository.findById(postId)).thenReturn(Optional.of(mock(PostEntity.class)));
+            when(memberRepository.findByName(username)).thenReturn(Optional.empty());
+            when(likeRepository.findByMemberAndPost(mock(MemberEntity.class), mock(PostEntity.class))).thenReturn(Optional.of(mock(LikeEntity.class)));
+            when(likeRepository.save(any(LikeEntity.class))).thenReturn(mock(LikeEntity.class));
+
+            //Then
+            assertThrows(SnsException.class, ()-> postService.like(postId, username));
+        }
     }
 
 }
