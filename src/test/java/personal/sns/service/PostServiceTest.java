@@ -3,6 +3,7 @@ package personal.sns.service;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -350,6 +351,44 @@ class PostServiceTest {
             //Then
             assertThrows(SnsException.class, ()-> postService.like(postId, username));
         }
+    }
+
+    @Nested
+    @DisplayName("게시글 좋아요 카운트 테스트")
+    class LikeCount{
+        @Test
+        @DisplayName("게시글 좋아요 카운트 성공")
+        void 게시글_좋아요_카운트_성공() {
+            //Given
+            Integer postId = 1;
+            Integer count = 10;
+            PostEntity post = EntityFixture.getPost1("title", "body");
+
+            //When
+
+            //게시글 찾기
+            when(postRepository.findById(any())).thenReturn(Optional.of(post));
+            when(likeRepository.findByPostCount(any())).thenReturn(count);
+
+            //Then
+            assertDoesNotThrow(() -> postService.likeCount(any()));
+        }
+
+        @Test
+        @DisplayName("게시글 좋아요 카운트 게시글 존재X 실패")
+        void 게시글_좋아요_카운트_게시글_존재X_실패() {
+            //Given
+            Integer postId = 1;
+            PostEntity post = EntityFixture.getPost1("title", "body");
+            //When
+
+            //게시글 찾기
+            when(postRepository.findById(eq(postId))).thenReturn(Optional.empty());
+
+            //Then
+            assertThrows(SnsException.class, () -> postService.likeCount(postId));
+        }
+
     }
 
 }
