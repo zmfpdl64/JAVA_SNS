@@ -87,4 +87,14 @@ public class PostService {
         LikeEntity likeEntity = LikeEntity.of(memberEntity, postEntity);
         likeRepository.save(likeEntity);
     }
+
+    public Integer likeCount(Integer postId) {
+        //게시글 찾기
+        PostEntity postEntity = postRepository.findById(postId).orElseThrow(() -> new SnsException(Errorcode.NOT_EXISTS_POST, String.format("포스트 Id: %d", postId)));
+
+        //좋아요 갯수 가져오기
+        Integer count = likeRepository.findByPostCount(postEntity);
+
+        return count;
+    }
 }

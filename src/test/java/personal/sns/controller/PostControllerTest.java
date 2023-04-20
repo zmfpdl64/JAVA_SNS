@@ -442,4 +442,56 @@ class PostControllerTest {
 
     }
 
+    @Nested
+    @DisplayName("게시글 좋아요 카운트 테스트")
+    class LikeCount {
+        @Test
+        @WithMockUser(username="username")
+        @DisplayName("게시글 좋아요 카운트 성공")
+        void 게시글_좋아요_카운트_성공() throws Exception {
+            //Given
+            Integer postId = 1;
+            Integer count = 10;
+
+            //When
+            when(postService.likeCount(any())).thenReturn(count);
+
+            //Then
+            mvc.perform(get("/api/v1/post/{postId}/likecount", postId)
+                    .contentType("application/json")
+            ).andExpect(status().isOk());
+        }
+
+        @Test
+        @WithMockUser(username = "username")
+        @DisplayName("게시글 좋아요 카운트 게시글 존재X 실패")
+        void 게시글_좋아요_카운트_게시글_존재X_실패() throws Exception {
+            //Given
+            Integer postId = 1;
+
+            //When
+            doThrow(new SnsException(Errorcode.NOT_EXISTS_POST)).when(postService).likeCount(any());
+
+            //Then
+            mvc.perform(get("/api/v1/post/{postId}/likecount", postId)
+                    .contentType("application/json")
+            ).andExpect(status().is(Errorcode.NOT_EXISTS_POST.getStatus().value()));
+        }
+
+        @Test
+        @WithAnonymousUser
+        @DisplayName("게시글 좋아요 카운트 로그인X 실패")
+        void 게시글_좋아요_카운트_로그인X_실패() throws Exception {
+            //Given
+            Integer postId = 1;
+
+            //When
+
+            //Then
+            mvc.perform(get("/api/v1/post/{postId}/likecount", postId)
+                    .contentType("application/json")
+            ).andExpect(status().is(Errorcode.INVALID_TOKEN.getStatus().value()));
+        }
+    }
+
 }
