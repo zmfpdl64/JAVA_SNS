@@ -6,12 +6,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import personal.sns.domain.Comment;
 import personal.sns.domain.Post;
+import personal.sns.domain.entity.CommentEntity;
 import personal.sns.domain.entity.LikeEntity;
 import personal.sns.domain.entity.MemberEntity;
 import personal.sns.domain.entity.PostEntity;
 import personal.sns.exception.Errorcode;
 import personal.sns.exception.SnsException;
+import personal.sns.repository.CommentEntityRepository;
 import personal.sns.repository.LikeEntityRepository;
 import personal.sns.repository.MemberRepository;
 import personal.sns.repository.PostEntityRepository;
@@ -25,6 +28,7 @@ public class PostService {
     private final PostEntityRepository postRepository;
     private final MemberRepository memberRepository;
     private final LikeEntityRepository likeRepository;
+    private final CommentEntityRepository commentRepository;
 
     @Transactional
     public void create(String title, String body, String username) {
@@ -98,5 +102,17 @@ public class PostService {
         Integer count = likeRepository.findByPostCount(postEntity);
 
         return count;
+    }
+
+    public void createComment(String comment, Integer postId, String username) {
+        //유저 찾기
+        MemberEntity memberEntity = memberRepository.findByName(username).orElseThrow(() -> new SnsException(Errorcode.NOT_EXISTS_USERNAME, String.format("유저이름: %s", username)));
+
+        //게시글 찾기
+        PostEntity postEntity = postRepository.findById(postId).orElseThrow(() -> new SnsException(Errorcode.NOT_EXISTS_POST, String.format("포스트 Id: %d", postId)));
+        
+        //댓글 저장
+        CommentEntity commentEntity = CommentEntity.of(comment, postEntity, memberEntity);
+        commentRepository.save(commentEntity);
     }
 }
