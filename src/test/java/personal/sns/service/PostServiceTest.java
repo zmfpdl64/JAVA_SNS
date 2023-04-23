@@ -12,12 +12,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
+import personal.sns.domain.entity.CommentEntity;
 import personal.sns.domain.entity.LikeEntity;
 import personal.sns.domain.entity.MemberEntity;
 import personal.sns.domain.entity.PostEntity;
 import personal.sns.exception.Errorcode;
 import personal.sns.exception.SnsException;
 import personal.sns.fixture.EntityFixture;
+import personal.sns.repository.CommentEntityRepository;
 import personal.sns.repository.LikeEntityRepository;
 import personal.sns.repository.MemberRepository;
 import personal.sns.repository.PostEntityRepository;
@@ -45,6 +47,9 @@ class PostServiceTest {
 
     @MockBean
     private LikeEntityRepository likeRepository;
+
+    @MockBean
+    private CommentEntityRepository commentRepository;
 
     @Nested
     @DisplayName("게시글 작성 테스트")
@@ -387,6 +392,62 @@ class PostServiceTest {
 
             //Then
             assertThrows(SnsException.class, () -> postService.likeCount(postId));
+        }
+
+    }
+
+    @Nested
+    @DisplayName("댓글 달기 테스트")
+    class CreateComment{
+        @Test
+        @DisplayName("댓글 달기 성공")
+        void 댓글_달기_성공() {
+            //Given
+            Integer postId = 1;
+            PostEntity post = EntityFixture.getPost1("title", "body");
+            CommentEntity comment = CommentEntity.of("comment", post, post.getMember());
+
+            //When
+            when(memberRepository.findByName("username")).thenReturn(Optional.of(post.getMember()));
+            when(postRepository.findById(postId)).thenReturn(Optional.of(post));
+            when(commentRepository.save(comment)).thenReturn(comment);
+
+            //Then
+            assertDoesNotThrow(() -> postService.createComment("comment", postId, "username"));
+        }
+
+        @Test
+        @DisplayName("댓글 달기 유저 존재 X 실패")
+        void 댓글_달기_유저_존재X_실패() {
+            //Given
+            Integer postId = 1;
+            PostEntity post = EntityFixture.getPost1("title", "body");
+            CommentEntity comment = CommentEntity.of("comment", post, post.getMember());
+
+            //When
+            when(memberRepository.findByName("username")).thenReturn(Optional.empty());
+            when(postRepository.findById(postId)).thenReturn(Optional.of(post));
+            when(commentRepository.save(comment)).thenReturn(comment);
+
+            //Then
+            assertThrows(SnsException.class, () -> postService.createComment("comment", postId, "username"));
+        }
+
+        @Test
+        @DisplayName("댓글 달기 게시글 존재X 실패")
+        void 댓글_달기_게시글_존재X_실패() {
+            //Given
+            Integer postId = 1;
+            PostEntity post = EntityFixture.getPost1("title", "body");
+            CommentEntity comment = CommentEntity.of("comment", post, post.getMember());
+
+            //When
+            when(memberRepository.findByName("username")).thenReturn(Optional.of(post.getMember()));
+            when(postRepository.findById(postId)).thenReturn(Optional.empty());
+            when(commentRepository.save(comment)).thenReturn(comment);
+
+            //Then
+            assertThrows(SnsException.class, () -> postService.createComment("comment", postId, "username"));
         }
 
     }

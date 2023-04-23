@@ -22,11 +22,13 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import personal.sns.controller.request.CommentCreateRequest;
 import personal.sns.controller.request.PostCreateRequest;
 import personal.sns.controller.request.PostDeleteRequest;
 import personal.sns.controller.request.PostModifyRequest;
 import personal.sns.domain.MemberRole;
 import personal.sns.domain.Post;
+import personal.sns.domain.entity.CommentEntity;
 import personal.sns.domain.entity.LikeEntity;
 import personal.sns.domain.entity.MemberEntity;
 import personal.sns.domain.entity.PostEntity;
@@ -38,6 +40,7 @@ import personal.sns.service.PostService;
 import personal.sns.util.JwtTokenUtils;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -494,4 +497,73 @@ class PostControllerTest {
         }
     }
 
+    @Nested
+    @WithMockUser(username="username")
+    @DisplayName("댓글 달기 테스트")
+    class CreateComment {
+        @Test
+        @DisplayName("댓글 달기 성공")
+        void 댓글_달기_성공() throws Exception {
+            //Given
+            Integer postId = 1;
+            String comment = "comment";
+            String username = "username";
+            PostEntity post = EntityFixture.getPost1("title", "body");
+            CommentEntity commentEntity = CommentEntity.of("comment", post, post.getMember());
+
+            //When
+            doNothing().when(postService).createComment(comment, postId, username);
+
+            //Then
+            mvc.perform(post("/api/v1/post/{postId}/comments", postId)
+                            .content(mapper.writeValueAsBytes(new CommentCreateRequest("comment")))
+                            .contentType("application/json")
+                    )
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @WithMockUser(username = "username")
+        @DisplayName("댓글 달기 유저 존재X 실패")
+        void 댓글_달기_유저_존재X_실패() throws Exception {
+            //Given
+            Integer postId = 1;
+            String comment = "comment";
+            String username = "username";
+            PostEntity post = EntityFixture.getPost1("title", "body");
+            CommentEntity commentEntity = CommentEntity.of("comment", post, post.getMember());
+
+            //When
+            doThrow(new SnsException(Errorcode.NOT_EXISTS_USERNAME)).when(postService).createComment(comment, postId, username);
+
+            //Then
+            mvc.perform(post("/api/v1/post/{postId}/comments", postId)
+                            .content(mapper.writeValueAsBytes(new CommentCreateRequest("comment")))
+                            .contentType("application/json")
+                    )
+                    .andExpect(status().is(Errorcode.NOT_EXISTS_USERNAME.getStatus().value()));
+        }
+
+        @Test
+        @WithMockUser(username = "username")
+        @DisplayName("댓글 달기 게시글 존재X 실패")
+        void 댓글_달기_게시글_존재X_실패() throws Exception {
+            //Given
+            Integer postId = 1;
+            String comment = "comment";
+            String username = "username";
+            PostEntity post = EntityFixture.getPost1("title", "body");
+            CommentEntity commentEntity = CommentEntity.of("comment", post, post.getMember());
+
+            //When
+            doThrow(new SnsException(Errorcode.NOT_EXISTS_POST)).when(postService).createComment(comment, postId, username);
+
+            //Then
+            mvc.perform(post("/api/v1/post/{postId}/comments", postId)
+                            .content(mapper.writeValueAsBytes(new CommentCreateRequest("comment")))
+                            .contentType("application/json")
+                    )
+                    .andExpect(status().is(Errorcode.NOT_EXISTS_POST.getStatus().value()));
+        }
+    }
 }
