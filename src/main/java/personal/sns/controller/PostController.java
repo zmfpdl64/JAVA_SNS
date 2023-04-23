@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import personal.sns.controller.request.CommentCreateRequest;
 import personal.sns.controller.request.PostCreateRequest;
 import personal.sns.controller.request.PostDeleteRequest;
 import personal.sns.controller.request.PostModifyRequest;
@@ -70,6 +71,13 @@ public class PostController {
     @GetMapping("/{postId}/likecount")
     public Response<Integer> likeCount(@PathVariable("postId") Integer postId, Authentication authentication) {
         return Response.success(postService.likeCount(postId));
+    }
+
+    @PostMapping("/{postId}/comments")
+    public Response<Void> createComment(@PathVariable("postId") Integer postId,@RequestBody CommentCreateRequest request, Authentication authentication){
+        log.info("info: {}", request.getComment());
+        postService.createComment(request.getComment(), postId, authentication.getName());
+        return Response.success();
     }
 
 
