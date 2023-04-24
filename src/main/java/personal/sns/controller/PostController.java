@@ -11,6 +11,7 @@ import personal.sns.controller.request.CommentCreateRequest;
 import personal.sns.controller.request.PostCreateRequest;
 import personal.sns.controller.request.PostDeleteRequest;
 import personal.sns.controller.request.PostModifyRequest;
+import personal.sns.controller.response.CommentResponse;
 import personal.sns.controller.response.PostModifyResponse;
 import personal.sns.controller.response.PostResponse;
 import personal.sns.controller.response.Response;
@@ -80,5 +81,10 @@ public class PostController {
         return Response.success();
     }
 
+    @GetMapping("/{postId}/comments")
+    public Response<Page<CommentResponse>> createComment(@PathVariable("postId") Integer postId, Authentication authentication, Pageable pageable){
+        Page<CommentResponse> response = postService.getComments(postId, authentication.getName(), pageable).map(CommentResponse::fromComment);
+        return Response.success(response);
+    }
 
 }
