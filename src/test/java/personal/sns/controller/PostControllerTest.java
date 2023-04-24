@@ -566,4 +566,63 @@ class PostControllerTest {
                     .andExpect(status().is(Errorcode.NOT_EXISTS_POST.getStatus().value()));
         }
     }
+
+    @Nested
+    @DisplayName("댓글 조회 테스트")
+    class GetComments{
+        @Test
+        @WithMockUser(username="username")
+        @DisplayName("게시글 조회 성공")
+        void 게시글_조회_성공() throws Exception {
+            //Given
+            Integer postId = 1;
+            String username = "username";
+
+            //When
+            when(postService.getComments(eq(postId), eq(username), any(Pageable.class))).thenReturn(Page.empty());
+
+            //Then
+            mvc.perform(get("/api/v1/post/1/comments"))
+                    .andExpect(status().isOk());
+        }
+
+
+        @Test
+        @WithMockUser(username="username")
+        @DisplayName("게시글 조회 유저 이름 존재X 실패")
+        void 게시글_조회_유저_이름_존재X_실패() throws Exception {
+            //Given
+            Integer postId = 1;
+            String username = "username";
+            Pageable pageable = mock(Pageable.class);
+
+            //When
+            when(postService.getComments(eq(postId), eq(username), any(Pageable.class))).thenThrow(new SnsException(Errorcode.NOT_EXISTS_POST));
+
+            //Then
+            mvc.perform(get("/api/v1/post/1/comments")
+                            .contentType("application/json")
+                    )
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        @WithMockUser(username="username")
+        @DisplayName("게시글 조회 게시글 존재X 실패")
+        void 게시글_조회_게시글_존재X_실패() throws Exception {
+            //Given
+            Integer postId = 1;
+            String username = "username";
+            Pageable pageable = mock(Pageable.class);
+
+            //When
+            when(postService.getComments(eq(postId), eq(username), any(Pageable.class))).thenThrow(new SnsException(Errorcode.NOT_EXISTS_POST));
+
+            //Then
+            mvc.perform(get("/api/v1/post/1/comments")
+                            .contentType("application/json")
+                    )
+                    .andExpect(status().isNotFound());
+        }
+    }
 }

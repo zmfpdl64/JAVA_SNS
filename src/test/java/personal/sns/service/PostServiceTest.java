@@ -452,4 +452,62 @@ class PostServiceTest {
 
     }
 
+    @Nested
+    @DisplayName("댓글 조회 테스트")
+    class GetComments{
+        @Test
+        @DisplayName("댓글 조회 성공")
+        void 댓글_조회_성공() {
+            ///Given
+            Integer postId = 1;
+            PostEntity post = EntityFixture.getPost1("title", "username");
+            MemberEntity member = EntityFixture.of();
+            Pageable pageable = mock(Pageable.class);
+
+            //When
+            when(memberRepository.findByName(member.getName())).thenReturn(Optional.of(member));
+            when(postRepository.findById(postId)).thenReturn(Optional.of(post));
+            when(commentRepository.findbyPost(post, pageable)).thenReturn(Page.empty());
+
+            //Then
+            assertDoesNotThrow(() -> postService.getComments(postId, member.getName(), pageable));
+        }
+
+        @Test
+        @DisplayName("댓글 조회 유저 존재X 실패")
+        void 댓글_조회_유저_존재X_실패() {
+            ///Given
+            Integer postId = 1;
+            PostEntity post = EntityFixture.getPost1("title", "username");
+            MemberEntity member = EntityFixture.of();
+            Pageable pageable = mock(Pageable.class);
+
+            //When
+            when(memberRepository.findByName(member.getName())).thenReturn(Optional.empty());
+            when(postRepository.findById(postId)).thenReturn(Optional.of(post));
+            when(commentRepository.findbyPost(post,pageable)).thenReturn(Page.empty());
+
+            //Then
+            assertThrows(SnsException.class, () -> postService.getComments(postId, member.getName(), pageable));
+        }
+
+        @Test
+        @DisplayName("댓글 조회 게시글 존재X 실패")
+        void 댓글_조회_게시글_존재X_실패() {
+            ///Given
+            Integer postId = 1;
+            PostEntity post = EntityFixture.getPost1("title", "username");
+            MemberEntity member = EntityFixture.of();
+            Pageable pageable = mock(Pageable.class);
+
+            //When
+            when(memberRepository.findByName(member.getName())).thenReturn(Optional.of(member));
+            when(postRepository.findById(postId)).thenReturn(Optional.empty());
+            when(commentRepository.findbyPost(post, pageable)).thenReturn(Page.empty());
+
+            //Then
+            assertThrows(SnsException.class, () -> postService.getComments(postId, member.getName(), pageable));
+        }
+    }
+
 }
