@@ -625,4 +625,38 @@ class PostControllerTest {
                     .andExpect(status().isNotFound());
         }
     }
+
+    @Nested
+    @DisplayName("내 댓글 조회 테스트")
+    class getMyComments{
+        @Test
+        @WithMockUser(username = "username")
+        @DisplayName("내 댓글 조회 성공")
+        void 내_댓글_조회_성공() throws Exception {
+            //Given
+            String username = "username";
+
+            //When
+            when(postService.getMyComments(eq(username), any(Pageable.class))).thenReturn(Page.empty());
+
+            //Then
+            mvc.perform(get("/api/v1/post/mycomments"))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @WithMockUser(username = "username")
+        @DisplayName("내 댓글 조회 유저 존재X 실패")
+        void 내_댓글_조회_유저_존재X_실패() throws Exception {
+            //Given
+            String username = "username";
+
+            //When
+            when(postService.getMyComments(eq(username), any(Pageable.class))).thenThrow(new SnsException(Errorcode.NOT_EXISTS_USERNAME));
+
+            //Then
+            mvc.perform(get("/api/v1/post/mycomments"))
+                    .andExpect(status().isNotFound());
+        }
+    }
 }
