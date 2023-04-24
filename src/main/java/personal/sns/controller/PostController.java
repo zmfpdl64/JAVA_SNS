@@ -87,4 +87,10 @@ public class PostController {
         return Response.success(response);
     }
 
+    @GetMapping("/mycomments")
+    public Response<Page<CommentResponse>> getMyComments(Authentication authentication, Pageable pageable) {
+        Page<CommentResponse> response = postService.getMyComments(authentication.getName(), pageable).map(CommentResponse::fromComment);
+        return Response.success(response);
+    }
+
 }

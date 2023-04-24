@@ -127,4 +127,13 @@ public class PostService {
         return comments;
 
     }
+
+    public Page<Comment> getMyComments(String username, Pageable pageable) {
+        //유저 찾기
+        MemberEntity memberEntity = memberRepository.findByName(username).orElseThrow(() -> new SnsException(Errorcode.NOT_EXISTS_USERNAME, String.format("유저이름: %s", username)));
+        //댓글 가져오기
+        Page<Comment> comments = commentRepository.findByMember(memberEntity, pageable).map(Comment::fromEntity);
+        //반환
+        return comments;
+    }
 }
