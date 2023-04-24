@@ -33,8 +33,7 @@ public class PostService {
     @Transactional
     public void create(String title, String body, String username) {
         // 유저 찾기
-        MemberEntity member = memberRepository.findByName(username)
-                .orElseThrow(() ->new SnsException(Errorcode.NOT_EXISTS_USERNAME, String.format("유저의 이름 %s", username)));
+        MemberEntity member = getMemberEntity(username);
         // 포스트 저장
         PostEntity postEntity = PostEntity.of(title, body, member);
         postRepository.save(postEntity);
@@ -44,7 +43,7 @@ public class PostService {
     public Post modify(String title, String body, String username, Integer postId) {
         // 포스트 찾기
         log.info("포스트 찾기");
-        PostEntity postEntity = postRepository.findById(postId).orElseThrow(() -> new SnsException(Errorcode.NOT_EXISTS_POST, String.format("게시글 ID: %d", postId)));
+        PostEntity postEntity = getPostEntity(postId);
         // 생성자, 수정자 일치 확인
         log.info("생성자 수정자 일치");
         if (!Objects.equals(postEntity.getMember().getName(), username)){
@@ -61,10 +60,10 @@ public class PostService {
     @Transactional
     public void delete(Integer postId, String username) {
         // 유저 찾기
-        MemberEntity memberEntity = memberRepository.findByName(username).orElseThrow(() -> new SnsException(Errorcode.NOT_EXISTS_USERNAME, String.format("유저이름: %s", username)));
+        MemberEntity memberEntity = getMemberEntity(username);
 
         // 게시글 찾기
-        PostEntity postEntity = postRepository.findById(postId).orElseThrow(() -> new SnsException(Errorcode.NOT_EXISTS_POST, String.format("포스트 Id: %d", postId)));
+        PostEntity postEntity = getPostEntity(postId);
 
         // 유저.이름 == 게시글.유저.이름
         if(!(Objects.equals(memberEntity.getName(), postEntity.getMember().getName()))){
@@ -83,9 +82,9 @@ public class PostService {
 
     @Transactional
     public void like(Integer postId, String username) {
-        MemberEntity memberEntity = memberRepository.findByName(username).orElseThrow(() -> new SnsException(Errorcode.NOT_EXISTS_USERNAME, String.format("유저이름: %s", username)));
+        MemberEntity memberEntity = getMemberEntity(username);
 
-        PostEntity postEntity = postRepository.findById(postId).orElseThrow(() -> new SnsException(Errorcode.NOT_EXISTS_POST, String.format("포스트 Id: %d", postId)));
+        PostEntity postEntity = getPostEntity(postId);
 
         likeRepository.findByMemberAndPost(memberEntity, postEntity).ifPresent((it) -> {
             throw new SnsException(Errorcode.ALREADY_LIKE, String.format("유저: %s는 게시글에 이미 좋아요를 눌렀습니다.", username));
@@ -96,7 +95,7 @@ public class PostService {
 
     public Integer likeCount(Integer postId) {
         //게시글 찾기
-        PostEntity postEntity = postRepository.findById(postId).orElseThrow(() -> new SnsException(Errorcode.NOT_EXISTS_POST, String.format("포스트 Id: %d", postId)));
+        PostEntity postEntity = getPostEntity(postId);
 
         //좋아요 갯수 가져오기
         Integer count = likeRepository.findByPostCount(postEntity);
@@ -106,10 +105,10 @@ public class PostService {
 
     public void createComment(String comment, Integer postId, String username) {
         //유저 찾기
-        MemberEntity memberEntity = memberRepository.findByName(username).orElseThrow(() -> new SnsException(Errorcode.NOT_EXISTS_USERNAME, String.format("유저이름: %s", username)));
+        MemberEntity memberEntity = getMemberEntity(username);
 
         //게시글 찾기
-        PostEntity postEntity = postRepository.findById(postId).orElseThrow(() -> new SnsException(Errorcode.NOT_EXISTS_POST, String.format("포스트 Id: %d", postId)));
+        PostEntity postEntity = getPostEntity(postId);
         
         //댓글 저장
         CommentEntity commentEntity = CommentEntity.of(comment, postEntity, memberEntity);
@@ -118,9 +117,9 @@ public class PostService {
 
     public Page<Comment> getComments(Integer postId, String username, Pageable pageable){
         //유저 찾기
-        MemberEntity memberEntity = memberRepository.findByName(username).orElseThrow(() -> new SnsException(Errorcode.NOT_EXISTS_USERNAME, String.format("유저이름: %s", username)));
+        MemberEntity memberEntity = getMemberEntity(username);
         //게시글 찾기
-        PostEntity postEntity = postRepository.findById(postId).orElseThrow(() -> new SnsException(Errorcode.NOT_EXISTS_POST, String.format("포스트 Id: %d", postId)));
+        PostEntity postEntity = getPostEntity(postId);
         //댓글 조회하기
         Page<Comment> comments = commentRepository.findbyPost(postEntity, pageable).map(Comment::fromEntity);
         //반환하기
@@ -130,10 +129,17 @@ public class PostService {
 
     public Page<Comment> getMyComments(String username, Pageable pageable) {
         //유저 찾기
-        MemberEntity memberEntity = memberRepository.findByName(username).orElseThrow(() -> new SnsException(Errorcode.NOT_EXISTS_USERNAME, String.format("유저이름: %s", username)));
+        MemberEntity memberEntity = getMemberEntity(username);
         //댓글 가져오기
         Page<Comment> comments = commentRepository.findByMember(memberEntity, pageable).map(Comment::fromEntity);
         //반환
         return comments;
+    }
+
+    private MemberEntity getMemberEntity(String username) {
+        return memberRepository.findByName(username).orElseThrow(() -> new SnsException(Errorcode.NOT_EXISTS_USERNAME, String.format("유저이름: %s", username)));
+    }
+    private PostEntity getPostEntity(Integer postId) {
+        return postRepository.findById(postId).orElseThrow(() -> new SnsException(Errorcode.NOT_EXISTS_POST, String.format("포스트 Id: %d", postId)));
     }
 }
