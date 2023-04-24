@@ -115,4 +115,16 @@ public class PostService {
         CommentEntity commentEntity = CommentEntity.of(comment, postEntity, memberEntity);
         commentRepository.save(commentEntity);
     }
+
+    public Page<Comment> getComments(Integer postId, String username, Pageable pageable){
+        //유저 찾기
+        MemberEntity memberEntity = memberRepository.findByName(username).orElseThrow(() -> new SnsException(Errorcode.NOT_EXISTS_USERNAME, String.format("유저이름: %s", username)));
+        //게시글 찾기
+        PostEntity postEntity = postRepository.findById(postId).orElseThrow(() -> new SnsException(Errorcode.NOT_EXISTS_POST, String.format("포스트 Id: %d", postId)));
+        //댓글 조회하기
+        Page<Comment> comments = commentRepository.findbyPost(postEntity, pageable).map(Comment::fromEntity);
+        //반환하기
+        return comments;
+
+    }
 }
