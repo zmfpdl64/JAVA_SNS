@@ -2,6 +2,10 @@ package personal.sns.fixture;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import personal.sns.domain.AlarmArgs;
+import personal.sns.domain.AlarmType;
+import personal.sns.domain.entity.AlarmEntity;
+import personal.sns.domain.entity.CommentEntity;
 import personal.sns.domain.entity.MemberEntity;
 import personal.sns.domain.entity.PostEntity;
 
@@ -48,15 +52,42 @@ public class EntityFixture {
         return member;
     }
 
+
+
     public static PostEntity getPost1(String title, String body) {
         MemberEntity member = of("username", "password", 1);
         PostEntity postEntity = new PostEntity();
-
         postEntity.setTitle(title);
         postEntity.setBody(body);
         postEntity.setId(1);
         postEntity.setMember(member);
         return postEntity;
+    }
+    public static PostEntity getPost1() {
+        MemberEntity member = of("username", "password", 1);
+        PostEntity postEntity = new PostEntity();
+        postEntity.setTitle("title");
+        postEntity.setBody("body");
+        postEntity.setId(1);
+        postEntity.setMember(member);
+        return postEntity;
+    }
 
+    public static CommentEntity getComment(){
+        PostEntity post = getPost1("title", "body");
+        return CommentEntity.of("comment", post, post.getMember());
+    }
+
+    public static AlarmEntity getCommentAlarm() {
+        PostEntity post = getPost1("title", "body");
+        MemberEntity member = of("username2", "password2", 2);
+        AlarmArgs args = new AlarmArgs(member.getId(), post.getMember().getId());
+        return AlarmEntity.of(args, AlarmType.NEW_COMMENT_ON_POST, member);
+    }
+    public static AlarmEntity getLikeAlarm() {
+        PostEntity post = getPost1("title", "body");
+        MemberEntity member = of("username2", "password2", 2);
+        AlarmArgs args = new AlarmArgs(member.getId(), post.getMember().getId());
+        return AlarmEntity.of(args, AlarmType.NEW_LIKE_ON_POST, member);
     }
 }

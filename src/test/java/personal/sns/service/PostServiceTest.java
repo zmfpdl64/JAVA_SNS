@@ -12,17 +12,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
-import personal.sns.domain.entity.CommentEntity;
-import personal.sns.domain.entity.LikeEntity;
-import personal.sns.domain.entity.MemberEntity;
-import personal.sns.domain.entity.PostEntity;
+import personal.sns.domain.entity.*;
 import personal.sns.exception.Errorcode;
 import personal.sns.exception.SnsException;
 import personal.sns.fixture.EntityFixture;
-import personal.sns.repository.CommentEntityRepository;
-import personal.sns.repository.LikeEntityRepository;
-import personal.sns.repository.MemberRepository;
-import personal.sns.repository.PostEntityRepository;
+import personal.sns.repository.*;
 
 import java.util.Optional;
 
@@ -50,6 +44,9 @@ class PostServiceTest {
 
     @MockBean
     private CommentEntityRepository commentRepository;
+
+    @MockBean
+    private AlarmEntityRepository alarmRepository;
 
     @Nested
     @DisplayName("게시글 작성 테스트")
@@ -319,6 +316,7 @@ class PostServiceTest {
             when(memberRepository.findByName(username)).thenReturn(Optional.of(mock(MemberEntity.class)));
             when(likeRepository.findByMemberAndPost(mock(MemberEntity.class), mock(PostEntity.class))).thenReturn(Optional.empty());
             when(likeRepository.save(any(LikeEntity.class))).thenReturn(mock(LikeEntity.class));
+            when(alarmRepository.save(any(AlarmEntity.class))).thenReturn(mock(AlarmEntity.class));
 
             //Then
             assertDoesNotThrow(()-> postService.like(postId, username));
@@ -335,6 +333,7 @@ class PostServiceTest {
             when(memberRepository.findByName(username)).thenReturn(Optional.empty());
             when(likeRepository.findByMemberAndPost(mock(MemberEntity.class), mock(PostEntity.class))).thenReturn(Optional.empty());
             when(likeRepository.save(any(LikeEntity.class))).thenReturn(mock(LikeEntity.class));
+            when(alarmRepository.save(any(AlarmEntity.class))).thenReturn(mock(AlarmEntity.class));
 
             //Then
             assertThrows(SnsException.class, ()-> postService.like(postId, username));
@@ -352,6 +351,7 @@ class PostServiceTest {
             when(memberRepository.findByName(username)).thenReturn(Optional.empty());
             when(likeRepository.findByMemberAndPost(mock(MemberEntity.class), mock(PostEntity.class))).thenReturn(Optional.of(mock(LikeEntity.class)));
             when(likeRepository.save(any(LikeEntity.class))).thenReturn(mock(LikeEntity.class));
+            when(alarmRepository.save(any(AlarmEntity.class))).thenReturn(mock(AlarmEntity.class));
 
             //Then
             assertThrows(SnsException.class, ()-> postService.like(postId, username));
@@ -406,12 +406,13 @@ class PostServiceTest {
             Integer postId = 1;
             PostEntity post = EntityFixture.getPost1("title", "body");
             CommentEntity comment = CommentEntity.of("comment", post, post.getMember());
+            AlarmEntity commentAlarm = EntityFixture.getCommentAlarm();
 
             //When
-            when(memberRepository.findByName("username")).thenReturn(Optional.of(post.getMember()));
+            when(memberRepository.findByName("username")).thenReturn(Optional.of(commentAlarm.getMember()));
             when(postRepository.findById(postId)).thenReturn(Optional.of(post));
             when(commentRepository.save(comment)).thenReturn(comment);
-
+            when(alarmRepository.save(commentAlarm)).thenReturn(commentAlarm);
             //Then
             assertDoesNotThrow(() -> postService.createComment("comment", postId, "username"));
         }
@@ -428,6 +429,7 @@ class PostServiceTest {
             when(memberRepository.findByName("username")).thenReturn(Optional.empty());
             when(postRepository.findById(postId)).thenReturn(Optional.of(post));
             when(commentRepository.save(comment)).thenReturn(comment);
+            when(alarmRepository.save(any(AlarmEntity.class))).thenReturn(mock(AlarmEntity.class));
 
             //Then
             assertThrows(SnsException.class, () -> postService.createComment("comment", postId, "username"));
@@ -445,6 +447,7 @@ class PostServiceTest {
             when(memberRepository.findByName("username")).thenReturn(Optional.of(post.getMember()));
             when(postRepository.findById(postId)).thenReturn(Optional.empty());
             when(commentRepository.save(comment)).thenReturn(comment);
+            when(alarmRepository.save(any(AlarmEntity.class))).thenReturn(mock(AlarmEntity.class));
 
             //Then
             assertThrows(SnsException.class, () -> postService.createComment("comment", postId, "username"));
@@ -545,4 +548,106 @@ class PostServiceTest {
         }
     }
 
+    @Nested
+    @DisplayName("댓글 알람 생성 테스트")
+    class CreateAlarm {
+        @Test
+        @DisplayName("댓글알람 생성 성공")
+        void 댓글알람_생성_성공() {
+            //Given
+            Integer postId = 1;
+            String username = "username";
+            AlarmEntity commentAlarm = EntityFixture.getCommentAlarm();
+            PostEntity post = EntityFixture.getPost1();
+            CommentEntity comment = EntityFixture.getComment();
+
+            //When
+            //유저 찾기
+            when(memberRepository.findByName(username)).thenReturn(Optional.of(commentAlarm.getMember()));
+            //게시글 찾기
+            when(postRepository.findById(postId)).thenReturn(Optional.of(post));
+            // 댓글 저장
+            when(commentRepository.save(comment)).thenReturn(comment);
+            // 알람 생성
+            when(alarmRepository.save(commentAlarm)).thenReturn(commentAlarm);
+
+            //Then
+            assertDoesNotThrow(() -> postService.createComment("comment", postId, "username"));
+        }
+
+        @Test
+        @DisplayName("댓글알람 생성 게시글작성자 댓글작성자 일치 실패")
+        void 댓글알람_생성_게시글생성자_댓글작성자_일치_실패() {
+            //Given
+            Integer postId = 1;
+            String username = "username";
+            AlarmEntity commentAlarm = EntityFixture.getCommentAlarm();
+            PostEntity post = EntityFixture.getPost1();
+            CommentEntity comment = EntityFixture.getComment();
+
+            //When
+            //유저 찾기
+            when(memberRepository.findByName(username)).thenReturn(Optional.of(post.getMember()));
+            //게시글 찾기
+            when(postRepository.findById(postId)).thenReturn(Optional.of(post));
+            // 댓글 저장
+            when(commentRepository.save(comment)).thenReturn(comment);
+            // 알람 생성X
+
+
+
+            //Then
+            assertDoesNotThrow(() -> postService.createComment("comment", postId, "username"));
+        }
+        @Test
+        @DisplayName("댓글알람 생성 게시글 존재X 실패")
+        void 댓글알람_생성_게시글_존재X_실패() {
+            //Given
+            Integer postId = 1;
+            String username = "username";
+            AlarmEntity commentAlarm = EntityFixture.getCommentAlarm();
+            PostEntity post = EntityFixture.getPost1();
+            CommentEntity comment = EntityFixture.getComment();
+
+            //When
+            //유저 찾기
+            when(memberRepository.findByName(username)).thenReturn(Optional.of(commentAlarm.getMember()));
+            //게시글 찾기
+            when(postRepository.findById(postId)).thenReturn(Optional.empty());
+            // 댓글 저장
+            when(commentRepository.save(comment)).thenReturn(comment);
+            // 알람 생성
+            when(alarmRepository.save(commentAlarm)).thenReturn(commentAlarm);
+
+
+            //Then
+            assertThrows(SnsException.class, () -> postService.createComment("comment", postId, "username"));
+        }
+
+        @Test
+        @DisplayName("댓글알람 생성 유저 존재X 실패")
+        void 댓글알람_생성_유저_존재X_실패() {
+            //Given
+            Integer postId = 1;
+            String username = "username";
+
+            AlarmEntity commentAlarm = EntityFixture.getCommentAlarm();
+            PostEntity post = EntityFixture.getPost1();
+            CommentEntity comment = EntityFixture.getComment();
+
+            //When
+            //유저 찾기
+            when(memberRepository.findByName(username)).thenReturn(Optional.empty());
+            //게시글 찾기
+            when(postRepository.findById(postId)).thenReturn(Optional.empty());
+            // 댓글 저장
+            when(commentRepository.save(comment)).thenReturn(comment);
+            // 알람 생성
+            when(alarmRepository.save(commentAlarm)).thenReturn(commentAlarm);
+
+
+            //Then
+            assertThrows(SnsException.class, () -> postService.createComment("comment", postId, "username"));
+        }
+    }
 }
