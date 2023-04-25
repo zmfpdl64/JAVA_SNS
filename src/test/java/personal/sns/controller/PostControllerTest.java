@@ -498,10 +498,10 @@ class PostControllerTest {
     }
 
     @Nested
-    @WithMockUser(username="username")
     @DisplayName("댓글 달기 테스트")
     class CreateComment {
         @Test
+        @WithMockUser(username="username")
         @DisplayName("댓글 달기 성공")
         void 댓글_달기_성공() throws Exception {
             //Given
@@ -657,6 +657,100 @@ class PostControllerTest {
             //Then
             mvc.perform(get("/api/v1/post/mycomments"))
                     .andExpect(status().isNotFound());
+        }
+    }
+
+    @Nested
+    @DisplayName("댓글알림 테스트")
+    class CommentAlarm {
+        @Test
+        @WithMockUser(username = "username")
+        @DisplayName("댓글알림 성공")
+        void 댓글알림_성공() throws Exception {
+//Given
+            Integer postId = 1;
+            String comment = "comment";
+            String username = "username";
+            PostEntity post = EntityFixture.getPost1("title", "body");
+            CommentEntity commentEntity = CommentEntity.of("comment", post, post.getMember());
+
+            //When
+            doNothing().when(postService).createComment(comment, postId, username);
+
+            //Then
+            mvc.perform(post("/api/v1/post/{postId}/comments", postId)
+                            .content(mapper.writeValueAsBytes(new CommentCreateRequest("comment")))
+                            .contentType("application/json")
+                    )
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @WithMockUser(username = "username")
+        @DisplayName("댓글알림 게시글작성자_댓글작성자 일치 실패")
+        void 댓글알림_게시글작성자_댓글작성자_일치_실패() throws Exception {
+            //Given
+            Integer postId = 1;
+            String comment = "comment";
+            String username = "username";
+            PostEntity post = EntityFixture.getPost1("title", "body");
+            CommentEntity commentEntity = CommentEntity.of("comment", post, post.getMember());
+
+            //When
+            doNothing().when(postService).createComment(comment, postId, username);
+
+            //Then
+            mvc.perform(post("/api/v1/post/{postId}/comments", postId)
+                            .content(mapper.writeValueAsBytes(new CommentCreateRequest("comment")))
+                            .contentType("application/json")
+                    )
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @WithMockUser(username = "username")
+        @DisplayName("댓글알림 게시글작성자_댓글작성자 일치 실패")
+        void 댓글알림_게시글_존재X_실패() throws Exception {
+            //Given
+            Integer postId = 1;
+            String comment = "comment";
+            String username = "username";
+            PostEntity post = EntityFixture.getPost1("title", "body");
+            CommentEntity commentEntity = CommentEntity.of("comment", post, post.getMember());
+
+            //When
+            doThrow(new SnsException(Errorcode.NOT_EXISTS_POST)).when(postService).createComment(comment, postId, username);
+
+            //Then
+            mvc.perform(post("/api/v1/post/{postId}/comments", postId)
+                            .content(mapper.writeValueAsBytes(new CommentCreateRequest("comment")))
+                            .contentType("application/json")
+                    )
+                    .andExpect(status().is(Errorcode.NOT_EXISTS_POST.getStatus().value()));
+        }
+
+        @Test
+        @WithAnonymousUser
+        @DisplayName("댓글알림 로그인X 실패")
+        void 댓글알림_로그인X_실패() throws Exception {
+            //Given
+            Integer postId = 1;
+            String comment = "comment";
+            String username = "username";
+            PostEntity post = EntityFixture.getPost1("title", "body");
+            CommentEntity commentEntity = CommentEntity.of("comment", post, post.getMember());
+
+            //When
+
+
+            //Then
+            mvc.perform(post("/api/v1/post/{postId}/comments", postId)
+                            .content(mapper.writeValueAsBytes(new CommentCreateRequest("comment")))
+                            .contentType("application/json")
+                    )
+                    .andExpect(status().is(Errorcode.INVALID_TOKEN.getStatus().value()));
+
+
         }
     }
 }
