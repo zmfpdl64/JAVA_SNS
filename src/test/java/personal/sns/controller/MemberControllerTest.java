@@ -12,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithAnonymousUser;
@@ -20,6 +21,11 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import personal.sns.controller.request.MemberJoinRequest;
 import personal.sns.controller.request.MemberLoginRequest;
+import personal.sns.controller.response.AlarmResponse;
+import personal.sns.controller.response.Response;
+import personal.sns.domain.Alarm;
+import personal.sns.domain.AlarmArgs;
+import personal.sns.domain.AlarmType;
 import personal.sns.domain.Member;
 import personal.sns.domain.entity.CommentEntity;
 import personal.sns.domain.entity.MemberEntity;
@@ -29,6 +35,8 @@ import personal.sns.fixture.EntityFixture;
 import personal.sns.service.MemberService;
 import personal.sns.service.PostService;
 
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
@@ -37,7 +45,7 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @DisplayName("유저 컨트롤러 테스트")
 @SpringBootTest
@@ -152,6 +160,57 @@ class MemberControllerTest {
 
     }
 
+    @Nested
+    @DisplayName("내알림 테스트")
+    class MyAlarmList{
+        @Test
+        @WithMockUser(username = "username")
+        @DisplayName("내알림 목록조회 성공")
+        void 내알림_목록조회_성공() throws Exception {
+            //Given
+            String username = "username";
+            PageRequest page = PageRequest.of(0, 10);
+            MemberEntity member = EntityFixture.of();
+            List<Alarm> alarmList = EntityFixture.getAlarms();
+            Page<Alarm> alarms = new PageImpl<>(alarmList, page, 10);
+            Response<Page<AlarmResponse>> responseAlarm = Response.success(alarms.map(AlarmResponse::fromAlarm));
+
+
+            //When
+            when(memberService.myAlarmList(eq(username), any(Pageable.class))).thenReturn(alarms);
+
+            //Then
+            mvc.perform(get("/api/v1/user/myalarm")
+                            .contentType("application/json")
+                    )
+                    .andDo(print())
+                    .andExpect(content().json(mapper.writeValueAsString(responseAlarm)))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @WithAnonymousUser
+        @DisplayName("내알림 목록조회 로그인X 실패")
+        void 내알림_목록조회_로그인X_실패() throws Exception {
+            //Given
+            String username = "username";
+            PageRequest page = PageRequest.of(0, 10);
+            String json = """
+                    {"resultCode":"INVALID_TOKEN",
+                    "result":null}
+                    """;
+
+            //When
+
+            //Then
+            mvc.perform(get("/api/v1/user/myalarm")
+                            .contentType("application/json")
+                    )
+                    .andDo(print())
+                    .andExpect(content().json(json))
+                    .andExpect(status().is(Errorcode.INVALID_TOKEN.getStatus().value()));
+        }
+    }
 
 
 }
