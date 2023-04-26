@@ -22,6 +22,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.springframework.web.method.HandlerMethod;
 import personal.sns.controller.request.CommentCreateRequest;
 import personal.sns.controller.request.PostCreateRequest;
 import personal.sns.controller.request.PostDeleteRequest;
@@ -39,6 +40,7 @@ import personal.sns.service.MemberService;
 import personal.sns.service.PostService;
 import personal.sns.util.JwtTokenUtils;
 
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Optional;
 
@@ -667,7 +669,7 @@ class PostControllerTest {
         @WithMockUser(username = "username")
         @DisplayName("댓글알림 성공")
         void 댓글알림_성공() throws Exception {
-//Given
+            //Given
             Integer postId = 1;
             String comment = "comment";
             String username = "username";
@@ -751,6 +753,85 @@ class PostControllerTest {
                     .andExpect(status().is(Errorcode.INVALID_TOKEN.getStatus().value()));
 
 
+        }
+    }
+
+    @Nested
+    @DisplayName("좋아요알림 테스트")
+    class LikeAlarmTest{
+        @DisplayName("좋아요알람 성공")
+        @WithMockUser(username = "username")
+        @Test
+        void 좋아요알람_성공() throws Exception {
+            //Given
+            Integer postId = 1;
+            String username = "username";
+
+            //When
+            doNothing().when(postService).like(postId, username);
+
+            //Then
+            mvc.perform(post("/api/v1/post/{postId}/likes", postId)
+                    .contentType("application/json")
+            ).andExpect(status().isOk());
+        }
+        @DisplayName("좋아요알람 게시글작성자 좋아요작성자 일치 알람생성X")
+        @WithMockUser(username="username")
+        @Test
+        void 좋아요알람_게시글작성자_좋아요작성자_일치_알람생성X() throws Exception {
+            //Given
+            Integer postId = 1;
+            String username = "username";
+
+            //When
+            doNothing().when(postService).like(postId, username);
+
+            //Then
+            mvc.perform(post("/api/v1/post/{postId}/likes", postId)
+                    .contentType("application/json")
+            )
+                    .andExpect(result -> {
+                        verify(postService, times(1)).like(postId, username);
+                    })
+                    .andExpect(status().isOk());
+        }
+
+        @DisplayName("좋아요알람 게시글존재X 실패")
+        @WithMockUser(username="username")
+        @Test
+        void 좋아요알람_게시글존재X_실패() throws Exception {
+            //Given
+            Integer postId = 1;
+            String username = "username";
+
+            //When
+            doThrow(new SnsException(Errorcode.NOT_EXISTS_POST)).when(postService).like(postId, username);
+
+            //Then
+            mvc.perform(post("/api/v1/post/{postId}/likes", postId)
+                            .contentType("application/json")
+                    )
+                    .andExpect(result -> {
+                        verify(postService, times(1)).like(postId, username);
+                    })
+                    .andExpect(status().isNotFound());
+        }
+        @DisplayName("좋아요알람 로그인x 실패")
+        @WithAnonymousUser
+        @Test
+        void 좋아요알람_로그인X_실패() throws Exception {
+            //Given
+            Integer postId = 1;
+            String username = "username";
+
+            //When
+
+
+            //Then
+            mvc.perform(post("/api/v1/post/{postId}/likes", postId)
+                            .contentType("application/json")
+                    )
+                    .andExpect(status().isUnauthorized());
         }
     }
 }

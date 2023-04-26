@@ -650,4 +650,88 @@ class PostServiceTest {
             assertThrows(SnsException.class, () -> postService.createComment("comment", postId, "username"));
         }
     }
+
+    @Nested
+    @DisplayName("좋아요 알림 테스트")
+    class LikAlarmTest{
+        @Test
+        @DisplayName("좋아요 알람 성공")
+        void 좋아요_알람_성공() {
+            //Given
+            Integer postId = 1;
+            String username = "username";
+            AlarmEntity likeAlarm = EntityFixture.getLikeAlarm();
+
+            //When
+            when(postRepository.findById(postId)).thenReturn(Optional.of(mock(PostEntity.class)));
+            when(memberRepository.findByName(username)).thenReturn(Optional.of(mock(MemberEntity.class)));
+            when(likeRepository.findByMemberAndPost(mock(MemberEntity.class), mock(PostEntity.class))).thenReturn(Optional.empty());
+            when(likeRepository.save(any(LikeEntity.class))).thenReturn(mock(LikeEntity.class));
+            when(alarmRepository.save(likeAlarm)).thenReturn(likeAlarm);
+
+            //Then
+            assertDoesNotThrow(()-> postService.like(postId, username));
+        }
+
+        @Test
+        @DisplayName("좋아요 알람 게시글작성자 좋아요작성자 일치 알람생성X")
+        void 좋아요알람_게시글작성자_좋아요작성자_일치_알람생성X() {
+            //Given
+            Integer postId = 1;
+            String username = "username";
+            PostEntity post = EntityFixture.getPost1();
+            AlarmEntity likeAlarm = EntityFixture.getLikeAlarm();
+
+            //When
+            when(postRepository.findById(postId)).thenReturn(Optional.of(post));
+            when(memberRepository.findByName(username)).thenReturn(Optional.of(post.getMember()));
+            when(likeRepository.findByMemberAndPost(mock(MemberEntity.class), mock(PostEntity.class))).thenReturn(Optional.empty());
+            when(likeRepository.save(any(LikeEntity.class))).thenReturn(mock(LikeEntity.class));
+
+
+            //Then
+            assertDoesNotThrow(()-> postService.like(postId, username));
+        }
+
+        @Test
+        @DisplayName("좋아요 알람 게시글 존재X 실패")
+        void 좋아요알람_게시글_존재X_실패() {
+            //Given
+            Integer postId = 1;
+            String username = "username";
+            PostEntity post = EntityFixture.getPost1();
+            AlarmEntity likeAlarm = EntityFixture.getLikeAlarm();
+
+            //When
+            when(postRepository.findById(postId)).thenReturn(Optional.empty());
+            when(memberRepository.findByName(username)).thenReturn(Optional.of(post.getMember()));
+            when(likeRepository.findByMemberAndPost(mock(MemberEntity.class), mock(PostEntity.class))).thenReturn(Optional.empty());
+            when(likeRepository.save(any(LikeEntity.class))).thenReturn(mock(LikeEntity.class));
+            when(alarmRepository.save(likeAlarm)).thenReturn(likeAlarm);
+
+
+            //Then
+            assertThrows(SnsException.class, ()-> postService.like(postId, username));
+        }
+        @Test
+        @DisplayName("좋아요 알람 유저존재X 실패")
+        void 좋아요알람_유저존재X_실패() {
+            //Given
+            Integer postId = 1;
+            String username = "username";
+            PostEntity post = EntityFixture.getPost1();
+            AlarmEntity likeAlarm = EntityFixture.getLikeAlarm();
+
+            //When
+            when(postRepository.findById(postId)).thenReturn(Optional.of(post));
+            when(memberRepository.findByName(username)).thenReturn(Optional.empty());
+            when(likeRepository.findByMemberAndPost(mock(MemberEntity.class), mock(PostEntity.class))).thenReturn(Optional.empty());
+            when(likeRepository.save(any(LikeEntity.class))).thenReturn(mock(LikeEntity.class));
+            when(alarmRepository.save(likeAlarm)).thenReturn(likeAlarm);
+
+
+            //Then
+            assertThrows(SnsException.class, ()-> postService.like(postId, username));
+        }
+    }
 }
