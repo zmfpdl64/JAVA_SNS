@@ -1,21 +1,28 @@
 package personal.sns.service;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ActiveProfiles;
 import personal.sns.domain.entity.MemberEntity;
 import personal.sns.exception.Errorcode;
 import personal.sns.exception.SnsException;
 import personal.sns.fixture.EntityFixture;
+import personal.sns.repository.AlarmEntityRepository;
 import personal.sns.repository.MemberRepository;
 
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 
@@ -27,6 +34,7 @@ class MemberServiceTest {
     @Autowired private MemberService memberService;
 
     @MockBean private MemberRepository memberRepository;
+    @MockBean private AlarmEntityRepository alarmRepository;
 
 
     @DisplayName("회원 가입 성공")
@@ -115,6 +123,40 @@ class MemberServiceTest {
             memberService.login(username, wrong_password)
         );
         assertEquals(exception.getErrorcode(), Errorcode.NOT_MATCH_PASSWORD);
+    }
+
+    @Nested
+    @DisplayName("내알림 테스트")
+    class MyAlarmList{
+        @Test
+        @DisplayName("내알림 목록조회 성공")
+        void 내알림_목록조회_성공(){
+            //Given
+            String username = "username";
+            MemberEntity member = EntityFixture.of();
+
+            //When
+            when(memberRepository.findByName(username)).thenReturn(Optional.of(member));
+            when(alarmRepository.findAllByMemberId(eq(1), any(Pageable.class))).thenReturn(Page.empty());
+
+            //Then
+            assertDoesNotThrow(() -> memberService.myAlarmList(username, PageRequest.of(0, 10)));
+        }
+
+        @Test
+        @DisplayName("내알림 목록조회 유저존재X_실패")
+        void 내알림_목록조회_유저존재X_실패(){
+            //Given
+            String username = "username";
+            MemberEntity member = EntityFixture.of();
+
+            //When
+            when(memberRepository.findByName(username)).thenReturn(Optional.empty());
+            when(alarmRepository.findAllByMemberId(eq(member.getId()), any(Pageable.class))).thenReturn(Page.empty());
+
+            //Then
+            assertThrows(SnsException.class ,() -> memberService.myAlarmList(eq(username), PageRequest.of(0,10)));
+        }
     }
 
 }

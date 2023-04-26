@@ -2,8 +2,10 @@ package personal.sns.fixture;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import personal.sns.domain.Alarm;
 import personal.sns.domain.AlarmArgs;
 import personal.sns.domain.AlarmType;
+import personal.sns.domain.Member;
 import personal.sns.domain.entity.AlarmEntity;
 import personal.sns.domain.entity.CommentEntity;
 import personal.sns.domain.entity.MemberEntity;
@@ -11,6 +13,7 @@ import personal.sns.domain.entity.PostEntity;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.List;
 
 public class EntityFixture {
 
@@ -89,5 +92,29 @@ public class EntityFixture {
         MemberEntity member = of("username2", "password2", 2);
         AlarmArgs args = new AlarmArgs(member.getId(), post.getMember().getId());
         return AlarmEntity.of(args, AlarmType.NEW_LIKE_ON_POST, member);
+    }
+
+    public static List<Alarm> getAlarms() {
+        MemberEntity member = of();
+        return List.of(
+                new Alarm(
+                        1,
+                        Member.fromEntity(member),
+                        AlarmType.NEW_COMMENT_ON_POST,
+                        new AlarmArgs(1, 10),
+                        Timestamp.from(Instant.now()),
+                        null,
+                        null
+                ),
+                new Alarm(
+                        2,
+                        Member.fromEntity(member),
+                        AlarmType.NEW_COMMENT_ON_POST,
+                        new AlarmArgs(1, 10),
+                        Timestamp.from(Instant.now()),
+                        null,
+                        null
+                )
+        );
     }
 }

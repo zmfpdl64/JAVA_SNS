@@ -32,7 +32,7 @@ public class AuthenticationConfig{
                 .csrf().disable()
                 .authorizeHttpRequests(authorize ->
                     authorize
-                            .requestMatchers("/api/v1/user/**").permitAll()
+                            .requestMatchers("/api/v1/user/login", "/api/v1/user/join").permitAll()
                             .requestMatchers("/api/*/post/list").permitAll()
                             .requestMatchers("/api/**").authenticated()
                             .anyRequest().permitAll()

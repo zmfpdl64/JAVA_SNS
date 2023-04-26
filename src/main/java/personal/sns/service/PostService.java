@@ -93,7 +93,7 @@ public class PostService {
         //알람 생성
         // 게시글 작성자 != 좋아요 작성자
         if(!Objects.equals(memberEntity, postEntity.getMember())){
-            AlarmArgs args = new AlarmArgs(memberEntity.getId(), postEntity.getId());;
+            AlarmArgs args = new AlarmArgs(postEntity.getMember().getId(), postEntity.getId());;
             AlarmType type = AlarmType.NEW_LIKE_ON_POST;
             AlarmEntity alarm = AlarmEntity.of(args, type, memberEntity);
             alarmRepository.save(alarm);
@@ -124,7 +124,7 @@ public class PostService {
         //알람 생성
         // 게시글 작성자 != 댓글 작성자
         if(!Objects.equals(memberEntity, postEntity.getMember())){
-            AlarmArgs args = new AlarmArgs(memberEntity.getId(), postEntity.getId());;
+            AlarmArgs args = new AlarmArgs(postEntity.getMember().getId(), postEntity.getId());;
             AlarmType type = AlarmType.NEW_COMMENT_ON_POST;
             AlarmEntity alarm = AlarmEntity.of(args, type, memberEntity);
             alarmRepository.save(alarm);

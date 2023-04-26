@@ -2,11 +2,12 @@ package personal.sns.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 import personal.sns.controller.request.MemberJoinRequest;
+import personal.sns.controller.response.AlarmResponse;
 import personal.sns.controller.response.MemberJoinResponse;
 import personal.sns.controller.response.MemberLoginResponse;
 import personal.sns.controller.response.Response;
@@ -29,6 +30,11 @@ public class MemberController {
         String token = memberService.login(request.getUsername(), request.getPassword());
 
         return Response.success(new MemberLoginResponse(token));
+    }
+    @GetMapping("/myalarm")
+    public Response<Page<AlarmResponse>> alarmList(Authentication authentication, Pageable pageable){
+        Page<AlarmResponse> alarms = memberService.myAlarmList(authentication.getName(), pageable).map(AlarmResponse::fromAlarm);
+        return Response.success(alarms);
     }
 
 }

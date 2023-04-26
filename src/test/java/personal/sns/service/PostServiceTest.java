@@ -310,11 +310,15 @@ class PostServiceTest {
             //Given
             Integer postId = 1;
             String username = "username";
+            String password = "password2";
+            Integer memberId = 2;
+            MemberEntity member = EntityFixture.of(username, password, memberId);
+            PostEntity postEntity = EntityFixture.getPost1();
 
             //When
-            when(postRepository.findById(postId)).thenReturn(Optional.of(mock(PostEntity.class)));
-            when(memberRepository.findByName(username)).thenReturn(Optional.of(mock(MemberEntity.class)));
-            when(likeRepository.findByMemberAndPost(mock(MemberEntity.class), mock(PostEntity.class))).thenReturn(Optional.empty());
+            when(postRepository.findById(postId)).thenReturn(Optional.of(postEntity));
+            when(memberRepository.findByName(username)).thenReturn(Optional.of(member));
+            when(likeRepository.findByMemberAndPost(member, postEntity)).thenReturn(Optional.empty());
             when(likeRepository.save(any(LikeEntity.class))).thenReturn(mock(LikeEntity.class));
             when(alarmRepository.save(any(AlarmEntity.class))).thenReturn(mock(AlarmEntity.class));
 
@@ -660,12 +664,14 @@ class PostServiceTest {
             //Given
             Integer postId = 1;
             String username = "username";
+            MemberEntity member = EntityFixture.of(username, "password2", 2);
             AlarmEntity likeAlarm = EntityFixture.getLikeAlarm();
+            PostEntity post = EntityFixture.getPost1();
 
             //When
-            when(postRepository.findById(postId)).thenReturn(Optional.of(mock(PostEntity.class)));
-            when(memberRepository.findByName(username)).thenReturn(Optional.of(mock(MemberEntity.class)));
-            when(likeRepository.findByMemberAndPost(mock(MemberEntity.class), mock(PostEntity.class))).thenReturn(Optional.empty());
+            when(postRepository.findById(postId)).thenReturn(Optional.of(post));
+            when(memberRepository.findByName(username)).thenReturn(Optional.of(member));
+            when(likeRepository.findByMemberAndPost(member, post)).thenReturn(Optional.empty());
             when(likeRepository.save(any(LikeEntity.class))).thenReturn(mock(LikeEntity.class));
             when(alarmRepository.save(likeAlarm)).thenReturn(likeAlarm);
 

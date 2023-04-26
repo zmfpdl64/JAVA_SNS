@@ -2,21 +2,27 @@ package personal.sns.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import personal.sns.domain.Alarm;
 import personal.sns.domain.Member;
 import personal.sns.domain.entity.MemberEntity;
 import personal.sns.exception.Errorcode;
 import personal.sns.exception.SnsException;
+import personal.sns.repository.AlarmEntityRepository;
 import personal.sns.repository.MemberRepository;
 import personal.sns.util.JwtTokenUtils;
+
 
 @Transactional
 @RequiredArgsConstructor
 @Service
 public class MemberService {
     private final MemberRepository memberRepository;
+    private final AlarmEntityRepository alarmRepository;
     private final BCryptPasswordEncoder encoder;
 
     @Value("${jwt.secret-key}")
@@ -52,6 +58,18 @@ public class MemberService {
     }
 
 
+    public Page<Alarm> myAlarmList(String username, Pageable pageable) {
+        //유저 찾기
+        MemberEntity memberEntity = getMemberEntity(username);
 
+        //알람 가져오기
+        Page<Alarm> alarms = alarmRepository.findAllByMemberId(memberEntity.getId(), pageable).map(Alarm::fromEntity);
 
+        //반환하기
+        return alarms;
+    }
+
+    private MemberEntity getMemberEntity(String username) {
+        return memberRepository.findByName(username).orElseThrow(() -> new SnsException(Errorcode.NOT_EXISTS_USERNAME, String.format("유저이름: %s", username)));
+    }
 }
