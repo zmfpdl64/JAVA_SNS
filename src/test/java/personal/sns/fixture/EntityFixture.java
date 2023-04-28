@@ -2,10 +2,7 @@ package personal.sns.fixture;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import personal.sns.domain.Alarm;
-import personal.sns.domain.AlarmArgs;
-import personal.sns.domain.AlarmType;
-import personal.sns.domain.Member;
+import personal.sns.domain.*;
 import personal.sns.domain.entity.AlarmEntity;
 import personal.sns.domain.entity.CommentEntity;
 import personal.sns.domain.entity.MemberEntity;
@@ -50,6 +47,7 @@ public class EntityFixture {
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
         MemberEntity member = MemberEntity.of("username", encoder.encode("password"));
         member.setId(1);
+        member.setRole(MemberRole.MEMBER);
         member.setCreated_at(Timestamp.from(Instant.now()));
         member.setModified_at(Timestamp.from(Instant.now()));
         return member;

@@ -2,11 +2,13 @@ package personal.sns.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.BDDMockito;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -15,7 +17,9 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.test.context.support.WithAnonymousUser;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -27,6 +31,7 @@ import personal.sns.controller.request.CommentCreateRequest;
 import personal.sns.controller.request.PostCreateRequest;
 import personal.sns.controller.request.PostDeleteRequest;
 import personal.sns.controller.request.PostModifyRequest;
+import personal.sns.domain.Member;
 import personal.sns.domain.MemberRole;
 import personal.sns.domain.Post;
 import personal.sns.domain.entity.CommentEntity;
@@ -36,8 +41,11 @@ import personal.sns.domain.entity.PostEntity;
 import personal.sns.exception.Errorcode;
 import personal.sns.exception.SnsException;
 import personal.sns.fixture.EntityFixture;
+import personal.sns.mock.WithCustomAnonymouse;
+import personal.sns.mock.WithMockCustomMember;
 import personal.sns.service.MemberService;
 import personal.sns.service.PostService;
+import personal.sns.util.ClassUtils;
 import personal.sns.util.JwtTokenUtils;
 
 import java.lang.reflect.Method;
@@ -78,7 +86,7 @@ class PostControllerTest {
     @DisplayName("게시글 생성 테스트 그룹")
     class createPostTests {
         @DisplayName("게시글 작성 권한O 성공")
-        @WithMockUser
+        @WithMockCustomMember
         @Test
         void 게시글_작성_권한O_성공() throws Exception {
             //Given
@@ -96,13 +104,14 @@ class PostControllerTest {
         }
 
         @DisplayName("게시글 생성 권한X 실패")
-        @WithAnonymousUser
+        @WithCustomAnonymouse
         @Test
         void 게시글_작성_권한X_실패() throws Exception {
             //Given
             String title = "title";
             String body = "body";
             //When
+
 
             //Then
             mvc.perform(post("/api/v1/post")
@@ -117,7 +126,7 @@ class PostControllerTest {
     @Nested
     public class modifyPost{
         @DisplayName("게시글 수정 권한O 성공")
-        @WithMockUser(username = "username")
+        @WithMockCustomMember
         @Test
         void 게시글_수정_권한O_성공() throws Exception {
             //Given
@@ -136,7 +145,7 @@ class PostControllerTest {
                     .andExpect(status().isOk());
         }
         @DisplayName("게시글 수정 로그인 X 실패")
-        @WithAnonymousUser()
+        @WithCustomAnonymouse
         @Test
         void 게시글_수정_유저이름_존재X_실패() throws Exception {
             //Given
@@ -153,7 +162,7 @@ class PostControllerTest {
                     .andExpect(status().isUnauthorized());
         }
         @DisplayName("게시글 수정 게시글 존재X 실패")
-        @WithMockUser(username = "username")
+        @WithMockCustomMember
         @Test
         void 게시글_수정_게시글_존재X_실패() throws Exception {
             //Given
@@ -171,7 +180,7 @@ class PostControllerTest {
                     .andExpect(status().isNotFound());
         }
         @DisplayName("게시글 수정 생성자 수정자 불일치 실패")
-        @WithMockUser(username = "username")
+        @WithMockCustomMember
         @Test
         void 게시글_수정_생성자_수정자_불일치_실패() throws Exception {
             //Given
@@ -189,7 +198,7 @@ class PostControllerTest {
                     .andExpect(status().isUnauthorized());
         }
         @DisplayName("게시글 수정 토큰만료 실패")
-        @WithMockUser(username = "username")
+        @WithMockCustomMember
         @Test
         void 게시글_수정_토큰만료_실패() throws Exception {
             //Given
@@ -212,15 +221,16 @@ class PostControllerTest {
     @DisplayName("게시글 삭제 테스트")
     public class deletePost{
         @DisplayName("게시글 삭제 성공")
-        @WithMockUser(username = "username")
+        @WithMockCustomMember
         @Test
         void 게시글_삭제_성공() throws Exception {
             //Given
             String title = "title";
             String body = "body";
             Integer postId = 1;
+
             //When
-            doNothing().when(postService).delete(eq(postId), eq("username"));
+            doNothing().when(postService).delete(eq(postId), any());
 
             //Then
             mvc.perform(delete("/api/v1/post/1")
@@ -231,7 +241,7 @@ class PostControllerTest {
                     .andExpect(status().isOk());
         }
         @DisplayName("게시글 삭제 생성자 삭제자 불일치 실패")
-        @WithMockUser(username = "username")
+        @WithMockCustomMember
         @Test
         void 게시글_삭제_생성자_삭제자_불일치_실패() throws Exception {
             //Given
@@ -251,7 +261,7 @@ class PostControllerTest {
         }
 
         @DisplayName("게시글 삭제 토큰 만료 실패")
-        @WithMockUser(username = "username")
+        @WithMockCustomMember
         @Test
         void 게시글_삭제_토큰_만료_실패() throws Exception {
             //Given
@@ -270,7 +280,7 @@ class PostControllerTest {
         }
 
         @DisplayName("게시글 삭제 존재 x 실패")
-        @WithMockUser(username = "username")
+        @WithMockCustomMember
         @Test
         void 게시글_삭제_존재_x_실패() throws Exception {
             //Given
@@ -313,7 +323,7 @@ class PostControllerTest {
     @DisplayName("피드 목록 테스트")
     class feedList{
         @DisplayName("게시글 목록 가져오기 성공")
-        @WithAnonymousUser
+        @WithCustomAnonymouse
         @Test
         void 게시글_목록_가져오기_성공() throws Exception {
             //Given
@@ -328,7 +338,7 @@ class PostControllerTest {
         }
 
         @DisplayName("게시글 목록 본인 포스트 가져오기 성공")
-        @WithMockUser(username="username")
+        @WithMockCustomMember
         @Test
         void 게시글_목록_본인_포스트_가져오기_성공() throws Exception {
             //Given
@@ -344,7 +354,7 @@ class PostControllerTest {
         }
 
         @DisplayName("게시글 목록 로그인 X 실패")
-        @WithAnonymousUser
+        @WithCustomAnonymouse
         @Test
         void 게시글_목록_본인_로그인X_실패() throws Exception {
             //Given
@@ -361,6 +371,7 @@ class PostControllerTest {
         }
 
         @DisplayName("게시글 목록 토큰 만료 실패")
+        @WithMockCustomMember
         @Test
         void 게시글_목록_본인_토큰만료_실패() throws Exception {
             //Given
@@ -383,7 +394,7 @@ class PostControllerTest {
     @DisplayName("게시글 좋아요 테스트")
     class LikeTest{
         @DisplayName("게시글 좋아요 성공")
-        @WithMockUser(username = "username")
+        @WithMockCustomMember
         @Test
         void 게시글_좋아요_성공() throws Exception {
         //Given
@@ -415,7 +426,7 @@ class PostControllerTest {
         }
 
         @DisplayName("게시글 좋아요 이미 클릭 실패")
-        @WithMockUser
+        @WithMockCustomMember
         @Test
         void 게시글_좋아요_중복클릭_실패() throws Exception {
             //Given
@@ -430,7 +441,7 @@ class PostControllerTest {
             ).andExpect(status().is(Errorcode.ALREADY_LIKE.getStatus().value()));
         }
         @DisplayName("게시글 좋아요 게시글 존재 X 실패")
-        @WithMockUser
+        @WithMockCustomMember
         @Test
         void 게시글_좋아요_게시글_존재_X_실패() throws Exception {
             //Given
@@ -451,7 +462,7 @@ class PostControllerTest {
     @DisplayName("게시글 좋아요 카운트 테스트")
     class LikeCount {
         @Test
-        @WithMockUser(username="username")
+        @WithMockCustomMember
         @DisplayName("게시글 좋아요 카운트 성공")
         void 게시글_좋아요_카운트_성공() throws Exception {
             //Given
@@ -468,7 +479,7 @@ class PostControllerTest {
         }
 
         @Test
-        @WithMockUser(username = "username")
+        @WithMockCustomMember
         @DisplayName("게시글 좋아요 카운트 게시글 존재X 실패")
         void 게시글_좋아요_카운트_게시글_존재X_실패() throws Exception {
             //Given
@@ -503,7 +514,7 @@ class PostControllerTest {
     @DisplayName("댓글 달기 테스트")
     class CreateComment {
         @Test
-        @WithMockUser(username="username")
+        @WithMockCustomMember
         @DisplayName("댓글 달기 성공")
         void 댓글_달기_성공() throws Exception {
             //Given
@@ -525,7 +536,7 @@ class PostControllerTest {
         }
 
         @Test
-        @WithMockUser(username = "username")
+        @WithMockCustomMember
         @DisplayName("댓글 달기 유저 존재X 실패")
         void 댓글_달기_유저_존재X_실패() throws Exception {
             //Given
@@ -547,7 +558,7 @@ class PostControllerTest {
         }
 
         @Test
-        @WithMockUser(username = "username")
+        @WithMockCustomMember
         @DisplayName("댓글 달기 게시글 존재X 실패")
         void 댓글_달기_게시글_존재X_실패() throws Exception {
             //Given
@@ -573,7 +584,7 @@ class PostControllerTest {
     @DisplayName("댓글 조회 테스트")
     class GetComments{
         @Test
-        @WithMockUser(username="username")
+        @WithMockCustomMember
         @DisplayName("게시글 조회 성공")
         void 게시글_조회_성공() throws Exception {
             //Given
@@ -590,7 +601,7 @@ class PostControllerTest {
 
 
         @Test
-        @WithMockUser(username="username")
+        @WithMockCustomMember
         @DisplayName("게시글 조회 유저 이름 존재X 실패")
         void 게시글_조회_유저_이름_존재X_실패() throws Exception {
             //Given
@@ -609,7 +620,7 @@ class PostControllerTest {
         }
 
         @Test
-        @WithMockUser(username="username")
+        @WithMockCustomMember
         @DisplayName("게시글 조회 게시글 존재X 실패")
         void 게시글_조회_게시글_존재X_실패() throws Exception {
             //Given
@@ -632,7 +643,7 @@ class PostControllerTest {
     @DisplayName("내 댓글 조회 테스트")
     class getMyComments{
         @Test
-        @WithMockUser(username = "username")
+        @WithMockCustomMember
         @DisplayName("내 댓글 조회 성공")
         void 내_댓글_조회_성공() throws Exception {
             //Given
@@ -647,7 +658,7 @@ class PostControllerTest {
         }
 
         @Test
-        @WithMockUser(username = "username")
+        @WithMockCustomMember
         @DisplayName("내 댓글 조회 유저 존재X 실패")
         void 내_댓글_조회_유저_존재X_실패() throws Exception {
             //Given
@@ -665,16 +676,19 @@ class PostControllerTest {
     @Nested
     @DisplayName("댓글알림 테스트")
     class CommentAlarm {
+
         @Test
-        @WithMockUser(username = "username")
+        @WithMockCustomMember
         @DisplayName("댓글알림 성공")
         void 댓글알림_성공() throws Exception {
             //Given
             Integer postId = 1;
             String comment = "comment";
             String username = "username";
+            Member member = Member.fromEntity(EntityFixture.of());
             PostEntity post = EntityFixture.getPost1("title", "body");
             CommentEntity commentEntity = CommentEntity.of("comment", post, post.getMember());
+
 
             //When
             doNothing().when(postService).createComment(comment, postId, username);
@@ -688,7 +702,7 @@ class PostControllerTest {
         }
 
         @Test
-        @WithMockUser(username = "username")
+        @WithMockCustomMember
         @DisplayName("댓글알림 게시글작성자_댓글작성자 일치 실패")
         void 댓글알림_게시글작성자_댓글작성자_일치_실패() throws Exception {
             //Given
@@ -710,7 +724,7 @@ class PostControllerTest {
         }
 
         @Test
-        @WithMockUser(username = "username")
+        @WithMockCustomMember
         @DisplayName("댓글알림 게시글작성자_댓글작성자 일치 실패")
         void 댓글알림_게시글_존재X_실패() throws Exception {
             //Given
@@ -760,7 +774,7 @@ class PostControllerTest {
     @DisplayName("좋아요알림 테스트")
     class LikeAlarmTest{
         @DisplayName("좋아요알람 성공")
-        @WithMockUser(username = "username")
+        @WithMockCustomMember
         @Test
         void 좋아요알람_성공() throws Exception {
             //Given
@@ -776,7 +790,7 @@ class PostControllerTest {
             ).andExpect(status().isOk());
         }
         @DisplayName("좋아요알람 게시글작성자 좋아요작성자 일치 알람생성X")
-        @WithMockUser(username="username")
+        @WithMockCustomMember
         @Test
         void 좋아요알람_게시글작성자_좋아요작성자_일치_알람생성X() throws Exception {
             //Given
@@ -797,7 +811,7 @@ class PostControllerTest {
         }
 
         @DisplayName("좋아요알람 게시글존재X 실패")
-        @WithMockUser(username="username")
+        @WithMockCustomMember
         @Test
         void 좋아요알람_게시글존재X_실패() throws Exception {
             //Given
