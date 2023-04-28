@@ -134,3 +134,58 @@ SNS 프로젝트 요구사항 설계도
    - [x] **[예외처리]** 로그인X
    - [x] 테스트 성공
    - [x] 포스트맨 테스트
+
+# 코드 최적화
+
+현재 문제점
+1. 매 조회 마다 유저 Entity를 중복 조회한다. (회원인증, 동작수행)
+2. 매 API 호출마다 Member 조회
+3. 댓글, 좋아요를 했을 때 알람까지 생성이 되어야 정상적으로 동작이 수행됨
+4. 알람을 표시하려면 리로드를 해야지만 알람이 표시됨
+5. Query문 최적화
+
+해결 방안
+1. 코드의 비 최적화
+2. 수많은 DB IO
+3. 기능간의 강한 결합
+
+# 문제점 1, 2 인증 최적화
+
+1. 매 조회 마다 유저 Entity를 중복 조회
+   - [x] Controller단에서 getName()이 아닌 Member로 캐스팅해서 전달
+   - [x] SafeCasting Class로 캐스팅 하기
+
+2. 테스트 케이스 리펙토링
+   - [x] @WithMockUser -> @WithCustomMember
+   - [x] @WithAnonymouse -> @WithCustomAnonymouse
+
+### 문제점: 기존에는 Security에서 주어지는 어노테이션을 이용했었지만 사용하는 인증 객체가 달라서 오류가 발생했다.
+
+Security: User.class
+My: Member.class
+
+### 해결방법: Member.class 전용으로 인증정보를 생성되는 팩토리 및 어노테이션을 만들자
+
+1. WithCustomMember 어노테이션 만들기
+   - [x] @Retention 어노테이션을 이용해 실행 범위 정하기
+   - [x] @WithSeucrityContext 어노테이션을 이용해 Factory 정하기
+
+2. WithCustomMember의 동작을 하는 Factory 생성하기
+   - [x] WithSecurityContextFactory 구현
+   - [x] SecurityContext 클래스로 context 생성
+   - [x] UsernamePasswordAuthenticationToken 클래스 이용하여 인증정보 생성
+   - [x] context에 인증정보 적용
+   - [x] 반환
+   - [x] 테스트 성공
+
+3. WithCustomAnonymouse 어노테이션 만들기
+   - [x] @Retention 어노테이션을 이용해 실행 범위 정하기
+   - [x] @WithSeucrityContext 어노테이션을 이용해 Factory 정하기
+
+4. WIthCustomAnonymouse 동작을 하는 Factory 생성
+   - [x] WithSecurityContextFactory 구현
+   - [x] SecurityContext 클래스로 context 생성
+   - [x] AnonymouseAuthenticationToken 클래스 이용하여 인증정보 생성
+   - [x] context에 인증정보 적용
+   - [x] 반환
+   - [x] 테스트 성공

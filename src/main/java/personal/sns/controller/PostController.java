@@ -15,9 +15,13 @@ import personal.sns.controller.response.CommentResponse;
 import personal.sns.controller.response.PostModifyResponse;
 import personal.sns.controller.response.PostResponse;
 import personal.sns.controller.response.Response;
+import personal.sns.domain.Member;
 import personal.sns.domain.Post;
+import personal.sns.exception.Errorcode;
+import personal.sns.exception.SnsException;
 import personal.sns.service.MemberService;
 import personal.sns.service.PostService;
+import personal.sns.util.ClassUtils;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
@@ -39,33 +43,42 @@ public class PostController {
     }
     @GetMapping("/my")
     public Response<Page<PostResponse>> getMyPost(Pageable pageable, Authentication authentication) {
-        Page<Post> lists = postService.getMyPost(pageable, authentication.getName());
+        Member member = getSafeCastInstance(authentication);
+        Page<Post> lists = postService.getMyPost(pageable, member.getName());
         return Response.success(lists.map(PostResponse::fromPost));
     }
 
     @PostMapping
     public Response<Void> createPost(@RequestBody PostCreateRequest request, Authentication authentication){
-        postService.create(request.getTitle(), request.getBody(), authentication.getName());
+        Member member = getSafeCastInstance(authentication);
+
+        postService.create(request.getTitle(), request.getBody(), member.getName());
         return Response.success();
     }
 
     @PutMapping("/{postId}")
     public Response<PostModifyResponse> modifyPost(@RequestBody PostModifyRequest request, @PathVariable Integer postId, Authentication authentication){
         log.info("요청: 게시글 ID {}", postId);
-        Post post = postService.modify(request.getTitle(), request.getBody(), authentication.getName(), postId);
+        Member member = getSafeCastInstance(authentication);
+
+        Post post = postService.modify(request.getTitle(), request.getBody(), member.getName(), postId);
         return Response.success(PostModifyResponse.fromPost(post));
     }
 
     @DeleteMapping("/{postId}")
     public Response<Void> deletePost(@RequestBody PostDeleteRequest request, @PathVariable Integer postId, Authentication authentication){
-        postService.delete(postId, authentication.getName());
+        Member member = getSafeCastInstance(authentication);
+
+        postService.delete(postId, member.getName());
 
         return Response.success();
     }
 
     @PostMapping("/{postId}/likes")
     public Response<Void> like(@PathVariable("postId") Integer postId, Authentication authentication) {
-        postService.like(postId, authentication.getName());
+        Member member = getSafeCastInstance(authentication);
+
+        postService.like(postId, member.getName());
         return Response.success();
     }
 
@@ -77,20 +90,31 @@ public class PostController {
     @PostMapping("/{postId}/comments")
     public Response<Void> createComment(@PathVariable("postId") Integer postId,@RequestBody CommentCreateRequest request, Authentication authentication){
         log.info("info: {}", request.getComment());
-        postService.createComment(request.getComment(), postId, authentication.getName());
+        Member member = getSafeCastInstance(authentication);
+
+        postService.createComment(request.getComment(), postId, member.getName());
         return Response.success();
     }
 
     @GetMapping("/{postId}/comments")
     public Response<Page<CommentResponse>> createComment(@PathVariable("postId") Integer postId, Authentication authentication, Pageable pageable){
-        Page<CommentResponse> response = postService.getComments(postId, authentication.getName(), pageable).map(CommentResponse::fromComment);
+        Member member = getSafeCastInstance(authentication);
+
+        Page<CommentResponse> response = postService.getComments(postId, member.getName(), pageable).map(CommentResponse::fromComment);
         return Response.success(response);
     }
 
     @GetMapping("/mycomments")
     public Response<Page<CommentResponse>> getMyComments(Authentication authentication, Pageable pageable) {
-        Page<CommentResponse> response = postService.getMyComments(authentication.getName(), pageable).map(CommentResponse::fromComment);
+        Member member = getSafeCastInstance(authentication);
+
+        Page<CommentResponse> response = postService.getMyComments(member.getName(), pageable).map(CommentResponse::fromComment);
         return Response.success(response);
+    }
+    private static Member getSafeCastInstance(Authentication authentication) {
+        return ClassUtils.getSafeCastInstance(authentication.getPrincipal(), Member.class).orElseThrow(
+                () -> new SnsException(Errorcode.INTERNAL_SERVER_ERROR, String.format("멤버.class로 캐스팅하지 못했습니다."))
+        );
     }
 
 }

@@ -32,8 +32,10 @@ import personal.sns.domain.entity.MemberEntity;
 import personal.sns.exception.Errorcode;
 import personal.sns.exception.SnsException;
 import personal.sns.fixture.EntityFixture;
+import personal.sns.mock.WithMockCustomMember;
 import personal.sns.service.MemberService;
 import personal.sns.service.PostService;
+import personal.sns.util.ClassUtils;
 
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -65,7 +67,6 @@ class MemberControllerTest {
     ObjectMapper mapper;
 
     @DisplayName("회원가입 페이지 정상")
-    @WithAnonymousUser
     @Test
     void 회원가입_페이지_정상 () throws Exception {
         //Given
@@ -164,7 +165,7 @@ class MemberControllerTest {
     @DisplayName("내알림 테스트")
     class MyAlarmList{
         @Test
-        @WithMockUser(username = "username")
+        @WithMockCustomMember
         @DisplayName("내알림 목록조회 성공")
         void 내알림_목록조회_성공() throws Exception {
             //Given
