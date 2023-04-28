@@ -11,7 +11,13 @@ import personal.sns.controller.response.AlarmResponse;
 import personal.sns.controller.response.MemberJoinResponse;
 import personal.sns.controller.response.MemberLoginResponse;
 import personal.sns.controller.response.Response;
+import personal.sns.domain.Member;
+import personal.sns.exception.Errorcode;
+import personal.sns.exception.SnsException;
 import personal.sns.service.MemberService;
+import personal.sns.util.ClassUtils;
+
+import java.util.Optional;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -33,8 +39,16 @@ public class MemberController {
     }
     @GetMapping("/myalarm")
     public Response<Page<AlarmResponse>> alarmList(Authentication authentication, Pageable pageable){
-        Page<AlarmResponse> alarms = memberService.myAlarmList(authentication.getName(), pageable).map(AlarmResponse::fromAlarm);
+        Member member = getSafeCastInstance(authentication);
+        Page<AlarmResponse> alarms = memberService.myAlarmList(member.getName(), pageable).map(AlarmResponse::fromAlarm);
         return Response.success(alarms);
     }
+
+    private static Member getSafeCastInstance(Authentication authentication) {
+        return ClassUtils.getSafeCastInstance(authentication.getPrincipal(), Member.class).orElseThrow(
+                () -> new SnsException(Errorcode.INTERNAL_SERVER_ERROR, String.format("멤버.class로 캐스팅하지 못했습니다."))
+        );
+    }
+
 
 }
