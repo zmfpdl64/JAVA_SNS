@@ -49,6 +49,7 @@ public class AuthenticationConfig{
             return (web) -> {
                 web.ignoring().requestMatchers("?!(/api).*");
                 web.ignoring().requestMatchers("/api/*/post/list");
+                web.ignoring().requestMatchers("/api/v1/user/join", "/api/v1/user/login");
             };
     }
 }
