@@ -66,7 +66,10 @@ public class PostService {
         if(!(Objects.equals(memberEntity.getName(), postEntity.getMember().getName()))){
             throw new SnsException(Errorcode.INVALID_PERMISSION);
         }
-        postRepository.delete(postEntity);
+        postRepository.deleteByPost(postEntity);
+        alarmRepository.deleteAllByPostId(postEntity.getId());
+        likeRepository.deleteAllByPost(postEntity);
+        commentRepository.deleteAllByPost(postEntity);
     }
 
     public Page<Post> getList(Pageable pageable) {

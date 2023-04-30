@@ -66,7 +66,7 @@ public class PostController {
     }
 
     @DeleteMapping("/{postId}")
-    public Response<Void> deletePost(@RequestBody PostDeleteRequest request, @PathVariable Integer postId, Authentication authentication){
+    public Response<Void> deletePost(@PathVariable Integer postId, Authentication authentication){
         Member member = getSafeCastInstance(authentication);
 
         postService.delete(postId, member.getName());
