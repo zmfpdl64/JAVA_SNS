@@ -1,6 +1,8 @@
 package personal.sns.repository;
 
+import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import personal.sns.domain.entity.LikeEntity;
@@ -15,4 +17,9 @@ public interface LikeEntityRepository extends JpaRepository<LikeEntity, Integer>
 
     @Query(value="select COUNT(l) from LikeEntity l where l.post = :postEntity")
     Integer findByPostCount(@Param("postEntity")PostEntity postEntity);
+
+    @Transactional
+    @Modifying
+    @Query(value = "update LikeEntity entity set entity.deleted_at = now() where entity.post = :post")
+    void deleteAllByPost(@Param("post") PostEntity post);
 }
