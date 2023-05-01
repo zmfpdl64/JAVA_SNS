@@ -17,6 +17,16 @@ SNS 프로젝트 요구사항 설계도
    - [x] [**예외 발생**] 기존 ID 존재 
    - [x] 기능 구현s
    - [x] TDD 성공
+```mermaid
+sequenceDiagram
+    autonumber
+    client ->> server : 회원가입 요청
+    alt 아이디가 중복된 경우
+    server -->> client : reason code와 함께 실패 반환
+    else 성공한 경우 
+    server ->> client : 성공 반환
+    end
+```
 2. 로그인 기능 구현
    - [x] TDD 작성
      - [x] 서비스 로직 작성
@@ -25,7 +35,18 @@ SNS 프로젝트 요구사항 설계도
    - [x] **[예외처리]** 저장되어있는 ID 존재하지 않음
    - [x] **[예외처리]** 비밀번호가 일치하지 않음
    - [x] TDD 성공
-
+```mermaid
+sequenceDiagram
+    autonumber
+    client ->> server : 로그인 요청
+    alt 아이디가 존재하지 않을 경우
+    server -->> client : reason code와 함께 실패 반환
+    else 비밀번호가 존재하지 않을 경우
+    server -->> client : reason code와 함께 실패 반환
+    else 성공한 경우 
+    server ->> client : 성공 반환
+    end
+```
 # 게시글 기능
 
 1. 게시글 작성 기능 구현
@@ -35,6 +56,20 @@ SNS 프로젝트 요구사항 설계도
    - [x] 인증이 된 사용자 게시글 작성
    - [x] **[예외처리]** 인증안된 사용자 게시글 작성 
    - [x] TDD 성공
+```mermaid
+sequenceDiagram
+    autonumber
+    client ->> server : 포스트 작성 요청
+    alt 아이디가 존재하지 않을 경우
+    server ->> client : reason code와 함께 실패 반환
+    else 비밀번호가 존재하지 않을 경우
+    server -->> client : reason code와 함께 실패 반환
+    else 성공한 경우 
+    server ->> db : 포스트 저장 요청
+    db -->> server : 저장 성공 반환
+    server ->> client : 성공 반환
+    end
+```
 2. 게시글 수정 기능 구현
    - [x] TDD 작성
    - [x] 게시글 수정 성공
@@ -43,6 +78,27 @@ SNS 프로젝트 요구사항 설계도
    - [x] **[예외처리]** 생성자와 수정자의 이름 불일치
    - [x] **[예외처리]** 게시글 못찾음
    - [x] 테스트 성공
+```mermaid
+sequenceDiagram
+    autonumber
+    client ->> server : 포스트 수정 요청
+    alt 유저 이름 못찾음
+    server ->> client : reason code와 함께 실패 반환
+    else 토큰 만료
+    server -->> client : reason code와 함께 실패 반환
+    else 생성자와 수정자의 이름 불일치
+    server -->> client : reason code와 함께 실패 반환
+    else 게시글 못찾음
+    server -> db : 게시글 요청
+    db -->> server : 게시글 존재 X 에러
+    else 성공한 경우
+    server -> db : 게시글 요청
+    db -->> server : 게시글 반환
+    server ->> db : 게시글 저장 요청
+    db -->> server : 저장 성공 반환
+    server ->> client : 성공 반환
+    end
+```
 3. 게시글 삭제 기능 구현
    - [x] TDD 작성
    - [x] 게시글 삭제 성공
@@ -51,21 +107,64 @@ SNS 프로젝트 요구사항 설계도
    - [x] **[예외처리]** 게시글 존재 x
    - [x] **[예외처리]** 로그인 x
    - [x] 테스트 성공
-
+```mermaid
+sequenceDiagram
+    autonumber
+    client ->> server : 포스트 삭제 요청
+    alt 생성자 삭제자 불일치
+    server ->> client : reason code와 함께 실패 반환
+    else 토큰 만료
+    server -->> client : reason code와 함께 실패 반환
+    else 게시글 존재 x
+    server -> db : 게시글 요청
+    db -->> server : 게시글 존재 X 에러
+    else 로그인X
+    server -->> client : reason code와 함께 실패 반환
+    else 성공한 경우 
+    server ->> db : 게시글 요청
+    db -->> server: 게시글 반환
+    server ->> db : 게시글 삭제 요청
+    db --> server : 삭제 성공
+    server ->> client : 성공 반환
+    end
+```
 # 피드 목록 기능
 
 1. 게시글 전체 목록
    - [x] TDD 작성
    - [x] 게시글 목록 조회
-     
-
+```mermaid
+sequenceDiagram
+    autonumber
+    client ->> server : 게시글들 요청
+    alt 성공한 경우 
+    server ->> db : 게시글들 요청
+    db -->> server: 게시글 반환
+    server ->> client : 성공 반환
+    end
+```
 2. 게시글 내가 작성한 목록
    - [x] TDD 작성
    - [x] 내 게시글 목록 조회
    - [x] **[예외처리]** 로그인 X
    - [x] **[예외처리]** 토큰 만료
    - [x] 테스트 성공 
-
+```mermaid
+sequenceDiagram
+    autonumber
+    client ->> server : 포스트 삭제 요청
+    alt 로그인 X
+    server ->> client : reason code와 함께 실패 반환
+    else 토큰 만료
+    server -->> client : reason code와 함께 실패 반환
+    else 성공한 경우 
+    server ->> db : 멤버 찾기
+    db -->> server : 멤버 반환
+    server ->> db: 유저 관련 게시글 요청
+    db -->> server : 유저 관련 게시글 반환
+    server ->> client : 성공 반환
+    end
+```
 # 좋아요 기능
 
 1. 좋아요 버튼 눌렀을 때
@@ -76,7 +175,32 @@ SNS 프로젝트 요구사항 설계도
    - [x] **[예외처리]** 게시글 존재 X
    - [x] 테스트 성공
    - [x] 실제 사용
-
+```mermaid
+sequenceDiagram
+    autonumber
+    client ->> server : 좋아요 요청
+    alt 이미 좋아요
+    server ->> db : 좋아요 조회 요청
+    db -->> server : error 반환 
+    server -->> client : reason code와 함께 실패 반환
+    else 로그인X
+    server --> client : reason code와 함께 실패 반환
+    else 토큰 만료
+    server -->> client : reason code와 함께 실패 반환
+    else 게시글 존재X
+    server ->> db : 게시글 요청
+    db -->> server : error 반환
+    server -->> client : reason code와 함께 실패 반환
+    else 성공한 경우 
+    server ->> db : 멤버 찾기
+    db -->> server : 멤버 반환
+    server ->> db: 유저 관련 게시글 요청
+    db -->> server : 유저 관련 게시글 반환
+    server ->> db: 좋아요 저장 요청
+    db -->> server: 성공 반환
+    server ->> client : 성공 반환
+    end
+```
 2. 좋아요 갯수 조회
    - [x] TDD 작성
    - [x] 특정 게시글 좋아요 갯수 반환
@@ -84,6 +208,22 @@ SNS 프로젝트 요구사항 설계도
    - [x] **[예외처리]** 로그인 X
    - [x] 테스트 성공
    - [x] 실제 사용
+```mermaid
+sequenceDiagram
+    autonumber
+    client ->> server : 좋아요 요청
+    alt 게시글 존재X
+    server ->> db : 게시글 요청
+    db -->> server : error 반환
+    server -->> client : reason code와 함께 실패 반환
+    else 로그인X
+    server --> client : reason code와 함께 실패 반환
+    else 성공한 경우 
+    server ->> db: 게시글 좋아요 갯수 요청
+    db -->> server : 게시글 좋아요 갯수 반환
+    server ->> client : 성공 반환
+    end
+```
 # 댓글 기능
 
 1. 댓글 작성 했을 때
@@ -93,7 +233,24 @@ SNS 프로젝트 요구사항 설계도
    - [x] **[예외처리]** 게시글 존재 X
    - [x] 테스트 성공
    - [x] 실제 사용
-
+```mermaid
+sequenceDiagram
+    autonumber
+    client ->> server : 댓글 작성 요청
+    alt 유저 이름 존재X
+    server ->> db : 유저 조회 요청
+    db -->> server : error 반환
+    server -->> client : reason code와 함께 실패 반환
+    else 게시글 존재X
+    server --> db : 게시글 조회 요청
+    db -->> server : error 반환
+    server --> client : reason code와 함께 실패 반환
+    else 성공한 경우 
+    server ->> db: 댓글 저장 요청
+    db -->> server : 댓글 반환
+    server ->> client : 성공 반환
+    end
+```
 2. 댓글 조회
    - [x] TDD 작성
    - [x] 댓글 조회
@@ -101,13 +258,46 @@ SNS 프로젝트 요구사항 설계도
    - [x] **[예외처리]** 게시글 존재 X
    - [x] 테스트 성공
    - [x] 포스트맨 테스트
+```mermaid
+sequenceDiagram
+    autonumber
+    client ->> server : 댓글 조회 요청
+    alt 유저 이름 존재X
+    server ->> db : 유저 조회 요청
+    db -->> server : error 반환
+    server -->> client : reason code와 함께 실패 반환
+    else 게시글 존재X
+    server --> db : 게시글 조회 요청
+    db -->> server : error 반환
+    server --> client : reason code와 함께 실패 반환
+    else 성공한 경우 
+    server ->> db: 댓글 조회 요청
+    db -->> server : 댓글 반환
+    server ->> client : 성공 반환
+    end
+```
 3. 내 댓글 조회
    - [x] TDD 작성
    - [x] 내 댓글 조회
    - [x] **[예외처리]** 유저 존재X
    - [x] 테스트 성공
    - [x] 포스트맨 테스트
-
+```mermaid
+sequenceDiagram
+    autonumber
+    client ->> server : 내 댓글 조회 요청
+    alt 유저 존재X
+    server ->> db : 유저 조회 요청
+    db -->> server : error 반환
+    server -->> client : reason code와 함께 실패 반환
+    else 성공한 경우 
+    server ->> db : 유저 조회 요청
+    db -->> server: 유저 반환
+    server ->> db: 댓글 조회 요청
+    db -->> server : 댓글 반환
+    server ->> client : 성공 반환
+    end
+```
 # 알람 기능
 
 1. 댓글 생성시 알람 생성
@@ -118,7 +308,28 @@ SNS 프로젝트 요구사항 설계도
    - [x] **[예외처리]** 로그인 X
    - [x] 테스트 성공
    - [x] 포스트맨 테스트
-
+```mermaid
+sequenceDiagram
+    autonumber
+    client ->> server : 댓글 알람 생성
+    alt 알람 생성 안함
+    server ->> db : 댓글 생성
+    db -->> server : 성공 반환
+    server -->> client : 성공 반환
+    else 게시글 존재X
+    server ->> db : 게시글 요청
+    db --> server : error 반환
+    server --> client : error code와 함께 반환
+    else 로그인X
+    server --> client : error code와 함께 반환
+    else 성공한 경우 
+    server ->> db : 유저 조회 요청
+    db -->> server: 유저 반환
+    server ->> db: 댓글 조회 요청
+    db -->> server : 댓글 반환
+    server ->> client : 성공 반환
+    end
+```
 2. 좋아요시 알람 생성
    - [x] TDD 작성
    - [x] 좋아요 알람생성
@@ -127,7 +338,26 @@ SNS 프로젝트 요구사항 설계도
    - [x] **[예외처리]** 로그인 X
    - [x] 테스트 성공
    - [x] 포스트맨 테스트
-
+```mermaid
+sequenceDiagram
+    autonumber
+    client ->> server : 좋아요 알람 생성
+    alt 알람 생성 안함
+    server ->> db : 댓글 생성
+    db -->> server : 성공 반환
+    server -->> client : 성공 반환
+    else 게시글 존재X
+    server ->> db : 게시글 요청
+    db --> server : error 반환
+    server --> client : error code와 함께 반환
+    else 성공한 경우 
+    server ->> db : 유저 조회 요청
+    db -->> server: 유저 반환
+    server ->> db: 댓글 조회 요청
+    db -->> server : 댓글 반환
+    server ->> client : 성공 반환
+    end
+```
 3. 내 알람 조회
    - [x] TDD 작성
    - [x] 내 알람 목록 조회
@@ -136,7 +366,20 @@ SNS 프로젝트 요구사항 설계도
    - [x] **[예외처리]** 로그인X
    - [x] 테스트 성공
    - [x] 포스트맨 테스트
-
+```mermaid
+sequenceDiagram
+    autonumber
+    client ->> server : 내 알람 조회 요청
+    alt 로그인X
+    server --> client : error code와 함께 반환
+    else 성공한 경우 
+    server ->> db : 유저 조회 요청
+    db -->> server: 유저 반환
+    server ->> db : 유저와 관련된 알람 조회 요청
+    db -->> server : 알람들 반환
+    server ->> client : 성공 반환
+    end
+```
 # 코드 최적화
 
 현재 문제점
@@ -209,7 +452,7 @@ My: Member.class
 
 1. 자주 호출 되는 Member 클래스를 캐싱하는 redis서버 적용
    - [x] redis build.gradle 추가  
-   - [x] redis configuration 빈 등록하기 
+   - [x] redis configuratiㅎon 빈 등록하기 
    - [x] Member Cache DAO 생성하기
      - [x] 멤버 생성
      - [x] 멤버 가져오기
