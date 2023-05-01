@@ -1,3 +1,5 @@
+[My Blog write to Redis](https://zmfpdl64.tistory.com/3)
+
 SNS 프로젝트 요구사항 설계도
 
 개발 순서
