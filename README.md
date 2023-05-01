@@ -202,3 +202,16 @@ My: Member.class
 3. 테스트 작성
    - [x] 변경 테스트 성공
    - [x] 포스트맨 테스트
+
+# 캐싱 서버 Redis
+
+1. 자주 호출 되는 Member 클래스를 캐싱하는 redis서버 적용
+   - [x] redis build.gradle 추가  
+   - [x] redis configuration 빈 등록하기 
+   - [x] Member Cache DAO 생성하기
+     - [x] 멤버 생성
+     - [x] 멤버 가져오기
+   - [x] Member 서비스단에서 Caching OR DB조회
+   - [x] 로그인시 redis에 캐싱
+   - [x] 포스트맨 테스트
+   - [x] 테스트 성공

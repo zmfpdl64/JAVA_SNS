@@ -10,11 +10,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ActiveProfiles;
+import personal.sns.domain.Member;
 import personal.sns.domain.entity.MemberEntity;
 import personal.sns.exception.Errorcode;
 import personal.sns.exception.SnsException;
 import personal.sns.fixture.EntityFixture;
 import personal.sns.repository.AlarmEntityRepository;
+import personal.sns.repository.MemberCacheRepository;
 import personal.sns.repository.MemberRepository;
 
 import java.util.Optional;
@@ -22,8 +24,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 
 @DisplayName("유저 서비스")
@@ -34,6 +35,7 @@ class MemberServiceTest {
     @Autowired private MemberService memberService;
 
     @MockBean private MemberRepository memberRepository;
+    @MockBean private MemberCacheRepository cacheRepository;
     @MockBean private AlarmEntityRepository alarmRepository;
 
 
@@ -82,7 +84,9 @@ class MemberServiceTest {
         MemberEntity member = EntityFixture.of(username, password);
 
         //When
+        when(cacheRepository.getMember(username)).thenReturn(Optional.empty());
         when(memberRepository.findByName(username)).thenReturn(Optional.of(member));
+        doNothing().when(cacheRepository).setMember(Member.fromEntity(member));
 
         //Then
         assertDoesNotThrow(() -> memberService.login(username, password));
@@ -98,6 +102,7 @@ class MemberServiceTest {
 
         //When
         when(memberRepository.findByName(username)).thenReturn(Optional.empty());
+
 
         //Then
         SnsException exception = assertThrows(SnsException.class, () -> {
