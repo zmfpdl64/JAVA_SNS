@@ -1,14 +1,15 @@
 [My Blog write to Redis](https://zmfpdl64.tistory.com/3)<br>
 [My Blog write to WithMockUser](https://zmfpdl64.tistory.com/4)
 
-SNS 프로젝트 요구사항 설계도
+## BackEnd 기술 스택
+ - Jdk 17
+ - Springboot version: '3.0.5'
+ - Spring Security
+ - Spring Redis
+ - Mysql
+ - H2
+ 
 
-개발 순서
-
-테스트 - 도메인 - 레포지토리 - 서비스 - 컨트롤러
-
-
-## 구현 순서
 
 # 로그인 회원 가입 기능
 
