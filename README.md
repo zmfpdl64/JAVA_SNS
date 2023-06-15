@@ -9,6 +9,9 @@
  - Mysql
  - H2
  
+## 📰 ERD
+![image](https://github.com/zmfpdl64/JAVA_SNS/assets/69797420/9e237548-cce4-4c99-9e98-a847f60ee8c9)
+
 
 
 # 로그인 회원 가입 기능
